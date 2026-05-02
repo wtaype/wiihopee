@@ -1,0 +1,38 @@
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+
+# Firebase / local secrets
+app/google-services.json
+google-services.json
+firebase.json
+*.secret
+*.secrets
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Environment / machine-local config
+.env
+.env.*
+*.local
+
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+
+Recursos/
+wiihope/app/google-services.json
+/app/google-services.json
+**/app/google-services.json
+
+# git tag v11 -m "Version v11" ; git push origin v11
+# git add . ; git commit -m "Actualizacion Principal v11.0.0" ; git push origin main

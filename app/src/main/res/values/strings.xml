@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">WiiHope</string>
+    <string name="playback_channel_name">Reproduccion WiiHope</string>
+    <string name="splash_logo">Logo WiiHope</string>
+    <string name="hero_image">Imagen WiiHope</string>
+</resources>
