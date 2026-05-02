@@ -34,5 +34,5 @@ wiihope/app/google-services.json
 /app/google-services.json
 **/app/google-services.json
 
-# git tag v11 -m "Version v11" ; git push origin v11
-# git add . ; git commit -m "Actualizacion Principal v11.0.0" ; git push origin main
+# git tag v10 -m "Version v10" ; git push origin v10
+# git add . ; git commit -m "Actualizacion Principal v10.0.0" ; git push origin main
