@@ -97,8 +97,10 @@ import com.wiihope.app.core.model.Quote
 import com.wiihope.app.feature.player.WiiHopeViewModel
 import com.wiihope.app.ui.components.EmptyState
 import com.wiihope.app.ui.components.GlassCard
+import com.wiihope.app.ui.components.GoldPill
 import com.wiihope.app.ui.components.WiButton
 import com.wiihope.app.ui.components.WiField
+import com.wiihope.app.ui.components.WiGoldButton
 import com.wiihope.app.ui.components.saludar
 import com.wiihope.app.ui.components.wiDia
 import com.wiihope.app.ui.theme.WiCss
@@ -180,9 +182,14 @@ private fun AuthShell(
     ) {
         item {
             GlassCard(Modifier.fillMaxWidth(), intensity = 0.75f) {
-                Image(painterResource(R.drawable.logo), contentDescription = "Logo", modifier = Modifier.size(92.dp).clip(CircleShape))
-                Text(Wii.app, style = WiText.h1, modifier = Modifier.fillMaxWidth().padding(top = 10.dp), textAlign = TextAlign.Center)
-                Text("Tu espacio de fe, audio y esperanza", style = WiText.body, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(painterResource(R.drawable.logo), contentDescription = "Logo", modifier = Modifier.size(74.dp).clip(CircleShape))
+                    Column(Modifier.padding(start = 16.dp).weight(1f)) {
+                        GoldPill("WiiHope")
+                        Text("Fe, audio y esperanza", style = WiText.h1, modifier = Modifier.padding(top = 8.dp))
+                        Text("Una experiencia espiritual simple, luminosa y personal.", style = WiText.body, modifier = Modifier.padding(top = 4.dp))
+                    }
+                }
             }
         }
         item {
@@ -209,7 +216,7 @@ private fun LoginCard(loading: Boolean, onLogin: (String, String) -> Unit, onGoo
         Text("o usa tu email", style = WiText.tiny, modifier = Modifier.fillMaxWidth().padding(top = 12.dp), textAlign = TextAlign.Center)
         WiField(user, { user = it.replace(" ", "").lowercase() }, "Email o usuario", leadingIcon = Icons.Rounded.Person, modifier = Modifier.padding(top = 14.dp))
         WiField(pass, { pass = it }, "Contrasena", leadingIcon = Icons.Rounded.Lock, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.padding(top = 10.dp))
-        WiButton("Entrar", { onLogin(user, pass) }, Modifier.fillMaxWidth().padding(top = 16.dp), Icons.AutoMirrored.Rounded.Login, loading)
+        WiGoldButton("Entrar", { onLogin(user, pass) }, Modifier.fillMaxWidth().padding(top = 16.dp), Icons.AutoMirrored.Rounded.Login, loading)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(onClick = onRecoverClick) { Text("Olvide mi contrasena") }
             TextButton(onClick = onRegisterClick) { Text("Crear cuenta") }
@@ -243,7 +250,7 @@ private fun RegisterCard(loading: Boolean, onRegister: (String, String, String, 
         }
         WiField(pass, { pass = it }, "Contrasena", visualTransformation = PasswordVisualTransformation(), leadingIcon = Icons.Rounded.Lock, modifier = Modifier.padding(top = 10.dp))
         WiField(pass2, { pass2 = it }, "Confirmar contrasena", visualTransformation = PasswordVisualTransformation(), leadingIcon = Icons.Rounded.Lock, modifier = Modifier.padding(top = 10.dp))
-        WiButton("Crear cuenta", { if (pass == pass2) onRegister(email, usuario, nombre, apellidos, grupo, genero, pass) }, Modifier.fillMaxWidth().padding(top = 16.dp), Icons.Rounded.Person, loading)
+        WiGoldButton("Crear cuenta", { if (pass == pass2) onRegister(email, usuario, nombre, apellidos, grupo, genero, pass) }, Modifier.fillMaxWidth().padding(top = 16.dp), Icons.Rounded.Person, loading)
         TextButton(onClick = onLoginClick, modifier = Modifier.fillMaxWidth()) { Text("Ya tengo cuenta", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
     }
 }
@@ -276,7 +283,7 @@ private fun GoogleCompleteCard(
             Checkbox(checked = accepted, onCheckedChange = { accepted = it })
             Text("Acepto los terminos y condiciones", style = WiText.small)
         }
-        WiButton(
+        WiGoldButton(
             "Completar registro",
             { if (accepted) onComplete(usuario, pass, rol) },
             Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -293,7 +300,7 @@ private fun RecoverCard(loading: Boolean, onRecover: (String) -> Unit, onBack: (
         Text("Recuperar acceso", style = WiText.h2)
         Text("Te enviaremos un enlace para restablecer tu contrasena.", style = WiText.body, modifier = Modifier.padding(top = 8.dp))
         WiField(email, { email = it.replace(" ", "").lowercase() }, "Email", leadingIcon = Icons.Rounded.Mail, modifier = Modifier.padding(top = 12.dp))
-        WiButton("Enviar enlace", { onRecover(email) }, Modifier.fillMaxWidth().padding(top = 16.dp), Icons.Rounded.Mail, loading)
+        WiGoldButton("Enviar enlace", { onRecover(email) }, Modifier.fillMaxWidth().padding(top = 16.dp), Icons.Rounded.Mail, loading)
         TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Volver", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
     }
 }
@@ -361,8 +368,9 @@ private fun MainShell(
 private fun TopHero(title: String, subtitle: String, imageRes: Int = R.drawable.jesus) {
     GlassCard(Modifier.fillMaxWidth(), intensity = 0.80f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(imageRes), contentDescription = title, modifier = Modifier.size(92.dp).clip(RoundedCornerShape(24.dp)), contentScale = ContentScale.Crop)
+            Image(painterResource(imageRes), contentDescription = title, modifier = Modifier.size(104.dp).clip(RoundedCornerShape(24.dp)), contentScale = ContentScale.Crop)
             Column(Modifier.padding(start = 16.dp).weight(1f)) {
+                GoldPill("Luz diaria")
                 Text(title, style = WiText.h2)
                 Text(subtitle, style = WiText.body)
             }
@@ -398,12 +406,11 @@ private fun BibleScreen(books: List<BibleBook>, onPlay: (AudioTrack, List<AudioT
             GlassCard(Modifier.fillMaxWidth(), intensity = 0.70f) {
                 Text(book?.name ?: "Selecciona un libro", style = WiText.h2)
                 Text("${book?.chapters ?: 0} capitulos disponibles", style = WiText.small, modifier = Modifier.padding(top = 4.dp))
-                WiButton(
+                WiGoldButton(
                     "Escuchar desde el capitulo 1",
                     { queue.firstOrNull()?.let { onPlay(it, queue) } },
                     Modifier.fillMaxWidth().padding(top = 14.dp),
                     Icons.Rounded.Headphones,
-                    color = WiCss.gold,
                 )
             }
         }
@@ -530,7 +537,7 @@ private fun QuoteSheet(onDismiss: () -> Unit, onSave: (Quote) -> Unit) {
                 Text("Favorita", style = WiText.body)
                 Switch(favorito, { favorito = it })
             }
-            WiButton("Guardar", { onSave(Quote(cita = cita.trim(), libro = libro.trim(), categoria = categoria.trim(), publico = publico, favorito = favorito)) }, Modifier.fillMaxWidth(), Icons.Rounded.Save)
+            WiGoldButton("Guardar", { onSave(Quote(cita = cita.trim(), libro = libro.trim(), categoria = categoria.trim(), publico = publico, favorito = favorito)) }, Modifier.fillMaxWidth(), Icons.Rounded.Save)
             Spacer(Modifier.height(20.dp))
         }
     }
