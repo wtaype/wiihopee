@@ -6,7 +6,6 @@ import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository(
@@ -21,14 +20,12 @@ class AuthRepository(
         val clean = emailOrUser.trim().lowercase()
         val email = if ("@" in clean) clean else getEmailByUser(clean) ?: error("Usuario no encontrado")
         auth.signInWithEmailAndPassword(email, password).await()
-        saveMessagingToken()
     }
 
     suspend fun register(profile: UserProfile, password: String) {
         val credential = auth.createUserWithEmailAndPassword(profile.email, password).await()
         val saved = profile.copy(uid = credential.user?.uid.orEmpty())
         firestore.collection("smiles").document(saved.usuarioLimpio).set(saved.toFirestore()).await()
-        saveMessagingToken()
     }
 
     suspend fun recover(email: String) {
@@ -52,7 +49,6 @@ class AuthRepository(
         val profile = getProfileByUid(uid)
         if (profile != null) {
             require(profile.estado != "pendiente" && profile.activo) { "Tu cuenta esta pendiente de activacion." }
-            saveMessagingToken()
         }
         return profile
     }
@@ -65,9 +61,13 @@ class AuthRepository(
         require(cleanUser.matches(Regex("[a-z0-9_-]{4,}"))) { "Usuario minimo 4 caracteres, solo letras, numeros, _ o -" }
         require(password.length >= 6) { "La contrasena necesita al menos 6 caracteres" }
         require(!userExists(cleanUser)) { "Ese usuario ya existe" }
+        require(!emailExists(email)) { "Ese email ya esta registrado" }
 
-        runCatching {
+        val linked = runCatching {
             user.linkWithCredential(EmailAuthProvider.getCredential(email, password)).await()
+        }.isSuccess
+        if (!linked) {
+            runCatching { user.updatePassword(password).await() }
         }
 
         val parts = user.displayName.orEmpty().trim().split(Regex("\\s+")).filter { it.isNotBlank() }
@@ -84,19 +84,19 @@ class AuthRepository(
             estado = "activo",
             uid = user.uid,
             foto = user.photoUrl?.toString(),
+            tema = "Oro|#FFC107",
             registradoPor = "google",
             creacion = now,
             ultimaActividad = now,
             aceptoTerminos = now,
         )
         firestore.collection("smiles").document(profile.usuarioLimpio).set(profile.toFirestore()).await()
-        saveMessagingToken()
         return profile
     }
 
     suspend fun updateProfilePhoto(usuario: String, foto: String?) {
         firestore.collection("smiles").document(usuario.lowercase().trim()).update(
-            mapOf("foto" to foto, "ultimaActividad" to Timestamp.now())
+            mapOf("avatar" to foto)
         ).await()
     }
 
@@ -106,15 +106,6 @@ class AuthRepository(
 
     suspend fun userExists(usuario: String): Boolean {
         return firestore.collection("smiles").document(usuario.trim().lowercase()).get().await().exists()
-    }
-
-    suspend fun saveMessagingToken() {
-        val profile = getProfile()
-        val token = runCatching { FirebaseMessaging.getInstance().token.await() }.getOrNull() ?: return
-        val docId = profile?.usuarioLimpio ?: currentUid ?: return
-        firestore.collection("smiles").document(docId).collection("devices").document(token).set(
-            mapOf("token" to token, "updatedAt" to Timestamp.now())
-        ).await()
     }
 
     fun logout() = auth.signOut()

@@ -15,6 +15,7 @@ data class UserProfile(
     val estado: String = "activo",
     val uid: String = "",
     val foto: String? = null,
+    val tema: String = "Oro|#FFC107",
     val registradoPor: String = "correo",
     val creacion: Timestamp = Timestamp.now(),
     val ultimaActividad: Timestamp = Timestamp.now(),
@@ -24,31 +25,26 @@ data class UserProfile(
     val usuarioLimpio: String get() = usuario.lowercase().trim()
 
     fun toFirestore() = mapOf(
-        "email" to email.lowercase().trim(),
-        "usuario" to usuarioLimpio,
-        "nombre" to nombre.trim(),
         "apellidos" to apellidos.trim(),
-        "grupo" to grupo.lowercase().trim(),
-        "genero" to genero,
-        "rol" to rol,
-        "activo" to activo,
-        "estado" to estado,
-        "uid" to uid,
-        "foto" to foto,
         "avatar" to foto.orEmpty(),
-        "terminos" to (aceptoTerminos != null),
+        "bio" to "",
+        "creado" to creacion,
+        "email" to email.lowercase().trim(),
+        "estado" to estado,
+        "nombre" to nombre.trim(),
         "plan" to "free",
+        "registradoPor" to registradoPor,
+        "rol" to rol,
         "segmento" to when (rol) {
             "gestor" -> "negocio"
             "empresa" -> "empresa"
             else -> "creador"
         },
+        "tema" to tema,
+        "terminos" to (aceptoTerminos != null),
+        "uid" to uid,
+        "usuario" to usuarioLimpio,
         "verificado" to false,
-        "registradoPor" to registradoPor,
-        "creacion" to creacion,
-        "creado" to creacion,
-        "ultimaActividad" to ultimaActividad,
-        "aceptoTerminos" to aceptoTerminos,
     )
 
     companion object {
@@ -66,8 +62,9 @@ data class UserProfile(
                 estado = data["estado"] as? String ?: if (data["activo"] as? Boolean == false) "pendiente" else "activo",
                 uid = data["uid"] as? String ?: "",
                 foto = data["foto"] as? String ?: data["avatar"] as? String,
+                tema = data["tema"] as? String ?: "Oro|#FFC107",
                 registradoPor = data["registradoPor"] as? String ?: "correo",
-                creacion = data["creacion"] as? Timestamp ?: Timestamp.now(),
+                creacion = data["creacion"] as? Timestamp ?: data["creado"] as? Timestamp ?: Timestamp.now(),
                 ultimaActividad = data["ultimaActividad"] as? Timestamp ?: Timestamp.now(),
                 aceptoTerminos = data["aceptoTerminos"] as? Timestamp,
             )

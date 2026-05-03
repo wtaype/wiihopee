@@ -8,6 +8,7 @@
     <application
         android:name=".WiiHopeApplication"
         android:allowBackup="true"
+        android:forceDarkAllowed="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.WiiHope"
@@ -16,7 +17,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTop">
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.WiiHope.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

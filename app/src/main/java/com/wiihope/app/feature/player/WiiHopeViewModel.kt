@@ -55,7 +55,6 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(hasAuthSession = authRepository.isLoggedIn)
             loadSessionNow()
-            delay(220)
             _uiState.value = _uiState.value.copy(booting = false)
         }
         refreshMusic()
@@ -78,10 +77,13 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             return
         }
         val profile = runCatching { authRepository.getProfile() }.getOrNull()
+        val needsGoogleProfile = profile == null && authRepository.isLoggedIn
         _uiState.value = _uiState.value.copy(
             profile = profile,
-            hasAuthSession = authRepository.isLoggedIn,
-            googlePending = false,
+            hasAuthSession = profile != null,
+            googlePending = needsGoogleProfile,
+            googleEmail = if (needsGoogleProfile) authRepository.currentEmail.orEmpty() else "",
+            googleName = if (needsGoogleProfile) authRepository.currentEmail?.substringBefore("@").orEmpty() else "",
         )
         if (profile != null) refreshQuotes()
     }
@@ -123,13 +125,17 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                         googlePending = true,
                         googleEmail = authRepository.currentEmail.orEmpty(),
                         googleName = authRepository.currentEmail?.substringBefore("@").orEmpty(),
-                        message = "Completa tu perfil",
+                        message = "Excelente, completa tu registro",
                     )
                 }
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(hasAuthSession = false, authLoading = false, error = e.cleanMessage())
             }
         }
+    }
+
+    fun googleSignInFailed(message: String = "No pudimos iniciar con Google") {
+        _uiState.value = _uiState.value.copy(authLoading = false, hasAuthSession = false, error = message)
     }
 
     fun completeGoogleRegistration(usuario: String, password: String, rol: String) {

@@ -26,6 +26,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SnackbarHostState
@@ -217,6 +218,7 @@ fun WiField(
     label: String,
     modifier: Modifier = Modifier,
     leadingIcon: ImageVector? = null,
+    trailingIcon: (@Composable () -> Unit)? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     singleLine: Boolean = true,
     minLines: Int = 1,
@@ -229,6 +231,7 @@ fun WiField(
         leadingIcon = leadingIcon?.let {
             { Icon(it, contentDescription = null, tint = WiCss.secondary, modifier = Modifier.size(20.dp)) }
         },
+        trailingIcon = trailingIcon,
         visualTransformation = visualTransformation,
         singleLine = singleLine,
         minLines = minLines,
