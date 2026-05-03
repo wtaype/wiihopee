@@ -58,7 +58,7 @@ class QuoteRepository(private val firestore: FirebaseFirestore = FirebaseFiresto
 
     suspend fun saveQuote(quote: Quote) {
         val collection = firestore.collection("wicitas")
-        val doc = if (quote.id.isBlank()) collection.document() else collection.document(quote.id)
+        val doc = if (quote.id.isBlank()) collection.document("cita_${System.currentTimeMillis()}") else collection.document(quote.id)
         doc.set(quote.copy(id = doc.id).toFirestore(isNew = quote.id.isBlank())).await()
     }
 

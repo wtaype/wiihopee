@@ -8,11 +8,13 @@ import com.wiihope.app.core.audio.PlaybackState
 import com.wiihope.app.core.data.AuthRepository
 import com.wiihope.app.core.data.BibleCatalog
 import com.wiihope.app.core.data.BibleLikesRepository
+import com.wiihope.app.core.data.MusicLikesRepository
 import com.wiihope.app.core.data.MusicRepository
 import com.wiihope.app.core.data.QuoteRepository
 import com.google.firebase.firestore.DocumentSnapshot
 import com.wiihope.app.core.model.AudioTrack
 import com.wiihope.app.core.model.BibleBook
+import com.wiihope.app.core.model.MusicLike
 import com.wiihope.app.core.model.Quote
 import com.wiihope.app.core.model.UserProfile
 import com.google.firebase.Timestamp
@@ -25,6 +27,7 @@ import kotlinx.coroutines.launch
 class WiiHopeViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = AuthRepository()
     private val bibleLikesRepository = BibleLikesRepository()
+    private val musicLikesRepository = MusicLikesRepository()
     private val musicRepository = MusicRepository()
     private val quoteRepository = QuoteRepository()
     private val mediaController = MediaControllerHolder(application.applicationContext)
@@ -72,6 +75,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
         if (profile != null) {
             refreshQuotes()
             refreshBibleLikes()
+            refreshMusicLikes()
         }
     }
 
@@ -85,6 +89,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                 _uiState.value = _uiState.value.copy(profile = profile, hasAuthSession = profile != null, authLoading = false, message = "Bienvenido")
                 refreshQuotes()
                 refreshBibleLikes()
+                refreshMusicLikes()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(hasAuthSession = false, authLoading = false, error = e.cleanMessage())
             }
@@ -107,6 +112,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                     )
                     refreshQuotes()
                     refreshBibleLikes()
+                    refreshMusicLikes()
                 } else {
                     _uiState.value = _uiState.value.copy(
                         authLoading = false,
@@ -142,6 +148,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                 )
                 refreshQuotes()
                 refreshBibleLikes()
+                refreshMusicLikes()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(authLoading = false, error = e.cleanMessage())
             }
@@ -168,6 +175,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                 _uiState.value = _uiState.value.copy(profile = profile, hasAuthSession = profile != null, authLoading = false, message = "Cuenta creada")
                 refreshQuotes()
                 refreshBibleLikes()
+                refreshMusicLikes()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(authLoading = false, error = e.cleanMessage())
             }
@@ -194,6 +202,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             quotesTotal = 0L,
             quotesHasMore = false,
             bibleLikes = emptyList(),
+            musicLikes = emptyList(),
         )
     }
 
@@ -217,6 +226,41 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             runCatching { musicRepository.loadMusic() }
                 .onSuccess { _uiState.value = _uiState.value.copy(music = it, musicLoading = false) }
                 .onFailure { _uiState.value = _uiState.value.copy(musicLoading = false, error = it.cleanMessage()) }
+        }
+    }
+
+    fun refreshMusicLikes(forceServer: Boolean = false) {
+        val usuario = _uiState.value.profile?.usuarioLimpio.orEmpty()
+        if (usuario.isBlank()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(musicLikesLoading = true)
+            runCatching { musicLikesRepository.load(usuario, forceServer) }
+                .onSuccess { _uiState.value = _uiState.value.copy(musicLikes = it, musicLikesLoading = false) }
+                .onFailure { _uiState.value = _uiState.value.copy(musicLikesLoading = false, error = it.cleanMessage()) }
+        }
+    }
+
+    fun toggleMusicLike(track: AudioTrack) {
+        val profile = _uiState.value.profile ?: return
+        val docId = MusicLike.docId(profile.usuario, track.id)
+        val current = _uiState.value.musicLikes
+        val isLiked = current.any { it.id == docId }
+        val optimistic = if (isLiked) {
+            current.filterNot { it.id == docId }
+        } else {
+            listOf(MusicLike.fromTrack(profile, track)) + current.filterNot { it.id == docId }
+        }
+        _uiState.value = _uiState.value.copy(musicLikes = optimistic)
+        viewModelScope.launch {
+            runCatching {
+                if (isLiked) {
+                    musicLikesRepository.delete(profile, track)
+                } else {
+                    musicLikesRepository.save(profile, track)
+                }
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(musicLikes = current, error = it.cleanMessage())
+            }
         }
     }
 

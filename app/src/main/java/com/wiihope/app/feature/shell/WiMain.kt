@@ -63,6 +63,7 @@ internal fun WiMain(page: WiPage, state: WiiHopeUiState, playback: PlaybackState
             )
             WiPage.Musica -> Musica(
                 tracks = state.music,
+                likes = state.musicLikes,
                 loading = state.musicLoading,
                 playback = playback,
                 onRefresh = viewModel::refreshMusic,
@@ -71,6 +72,7 @@ internal fun WiMain(page: WiPage, state: WiiHopeUiState, playback: PlaybackState
                 onPrevious = viewModel::previous,
                 onNext = viewModel::next,
                 onLoop = viewModel::toggleLoopOne,
+                onToggleLike = viewModel::toggleMusicLike,
             )
             WiPage.Ajustes -> Ajustes(state, viewModel)
             WiPage.Descubre -> Descubre()

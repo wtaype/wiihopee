@@ -71,7 +71,9 @@ internal fun MainShell(
             )
         },
         floatingActionButton = {
-            if (currentPage == WiPage.Citas) QuoteFab(viewModel)
+            val showingCitas = currentPage == WiPage.Citas &&
+                (pagerState.currentPage == WiPage.Citas.navIndex || pagerState.targetPage == WiPage.Citas.navIndex)
+            if (showingCitas) QuoteFab(viewModel)
         },
         bottomBar = {
             Column {

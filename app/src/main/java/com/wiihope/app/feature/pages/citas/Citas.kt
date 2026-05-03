@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.FormatQuote
@@ -42,6 +45,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.wiihope.app.core.model.Quote
 import com.wiihope.app.core.model.UserProfile
 import com.wiihope.app.feature.player.WiiHopeViewModel
@@ -173,7 +178,7 @@ private fun FeaturedQuoteCard(quote: Quote, currentUser: UserProfile?, viewModel
     QuoteCardShell(quote = quote, featured = true, currentUser = currentUser, viewModel = viewModel) {
         Text(
             "\"${quote.cita}\"",
-            style = WiText.h2.copy(fontStyle = FontStyle.Italic),
+            style = WiText.body.copy(fontSize = 17.sp, lineHeight = 25.sp, color = WiCss.text700),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
         )
@@ -185,7 +190,7 @@ private fun QuoteCard(quote: Quote, currentUser: UserProfile?, viewModel: WiiHop
     QuoteCardShell(quote = quote, featured = false, currentUser = currentUser, viewModel = viewModel) {
         Text(
             "\"${quote.cita}\"",
-            style = WiText.body.copy(fontStyle = FontStyle.Italic),
+            style = WiText.body.copy(fontSize = 17.sp, lineHeight = 25.sp, color = WiCss.text700),
             modifier = Modifier.padding(vertical = 15.dp),
         )
     }
@@ -201,21 +206,25 @@ private fun QuoteCardShell(
     content: @Composable () -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf(false) }
     var actionsOpen by remember(quote.id) { mutableStateOf(false) }
-    val canDelete = quote.isMine(currentUser)
+    val canManage = quote.isMine(currentUser)
     GlassCard(
         Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = {},
-                onLongClick = { if (canDelete) actionsOpen = !actionsOpen },
+                onClick = { if (canManage) actionsOpen = !actionsOpen },
+                onLongClick = { if (canManage) actionsOpen = !actionsOpen },
             ),
         intensity = if (featured) 0.76f else 0.58f,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             GoldPill(quote.categoria.ifBlank { "Fe" })
             Spacer(Modifier.weight(1f))
-            if (canDelete && actionsOpen) {
+            if (canManage && actionsOpen) {
+                IconButton(onClick = { editing = true }, modifier = Modifier.size(38.dp)) {
+                    Icon(Icons.Rounded.Edit, null, tint = WiCss.text300, modifier = Modifier.size(19.dp))
+                }
                 IconButton(onClick = { confirmDelete = true }, modifier = Modifier.size(38.dp)) {
                     Icon(Icons.Rounded.Delete, null, tint = WiCss.text300, modifier = Modifier.size(19.dp))
                 }
@@ -240,6 +249,16 @@ private fun QuoteCardShell(
         }
     }
     if (confirmDelete) DeleteQuoteDialog(onDismiss = { confirmDelete = false }, onConfirm = { confirmDelete = false; viewModel.deleteQuote(quote) })
+    if (editing) {
+        QuoteSheet(
+            initial = quote,
+            onDismiss = { editing = false },
+            onSave = { edited ->
+                viewModel.saveQuote(edited)
+                editing = false
+            },
+        )
+    }
 }
 
 private fun quoteFooter(quote: Quote): String {
@@ -280,7 +299,7 @@ internal fun QuoteFab(viewModel: WiiHopeViewModel) {
         Icon(Icons.Rounded.Add, contentDescription = "Nueva cita", modifier = Modifier.size(24.dp))
     }
     if (open) {
-        QuoteSheet(onDismiss = { open = false }, onSave = { quote ->
+        QuoteSheet(initial = null, onDismiss = { open = false }, onSave = { quote ->
             viewModel.saveQuote(quote)
             open = false
         })
@@ -289,17 +308,26 @@ internal fun QuoteFab(viewModel: WiiHopeViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun QuoteSheet(onDismiss: () -> Unit, onSave: (Quote) -> Unit) {
-    var cita by remember { mutableStateOf("") }
-    var libro by remember { mutableStateOf("") }
-    var categoria by remember { mutableStateOf("Fe") }
-    var favorito by remember { mutableStateOf(false) }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = WiCss.cream) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Nueva cita", style = WiText.h2)
-            WiField(cita, { cita = it }, "Cita", singleLine = false, minLines = 4)
-            WiField(libro, { libro = it }, "Referencia")
-            WiField(categoria, { categoria = it }, "Categoria")
+private fun QuoteSheet(initial: Quote?, onDismiss: () -> Unit, onSave: (Quote) -> Unit) {
+    var cita by remember(initial?.id) { mutableStateOf(initial?.cita.orEmpty()) }
+    var libro by remember(initial?.id) { mutableStateOf(initial?.libro.orEmpty()) }
+    var categoria by remember(initial?.id) { mutableStateOf(initial?.categoria ?: "Perdon") }
+    var favorito by remember(initial?.id) { mutableStateOf(initial?.favorito ?: false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = WiCss.cream) {
+        Column(
+            Modifier
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .imePadding()
+                .navigationBarsPadding(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(if (initial == null) "Nueva cita" else "Editar cita", style = WiText.h2)
+            WiField(cita, { cita = it }, "Cita", singleLine = false, minLines = 3)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                WiField(libro, { libro = it }, "Referencia", modifier = Modifier.weight(1f))
+                WiField(categoria, { categoria = it }, "Categoria", modifier = Modifier.weight(1f))
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Favorita", style = WiText.body)
                 Checkbox(favorito, { favorito = it })
@@ -308,7 +336,7 @@ private fun QuoteSheet(onDismiss: () -> Unit, onSave: (Quote) -> Unit) {
                 "Guardar",
                 {
                     onSave(
-                        Quote(
+                        (initial ?: Quote()).copy(
                             cita = cita.trim(),
                             libro = libro.trim(),
                             categoria = categoria.trim(),

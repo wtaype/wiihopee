@@ -35,5 +35,5 @@ wiihope/app/google-services.json
 **/app/google-services.json
 
 # .\gradlew.bat assembleDebug
-# git add . && git commit -m "Actualizacion Principal v14.0.0" && git push origin main
-# git tag v14 -m "Version v14" && git push origin v14
+# git add . && git commit -m "Actualizacion Principal v16.0.0" && git push origin main
+# git tag v16 -m "Version v16" && git push origin v16
