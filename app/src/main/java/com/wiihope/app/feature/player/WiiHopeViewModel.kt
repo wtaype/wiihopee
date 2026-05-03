@@ -10,7 +10,6 @@ import com.wiihope.app.core.data.BibleCatalog
 import com.wiihope.app.core.data.MusicRepository
 import com.wiihope.app.core.data.QuoteRepository
 import com.wiihope.app.core.model.AudioTrack
-import com.wiihope.app.core.model.BibleBook
 import com.wiihope.app.core.model.Quote
 import com.wiihope.app.core.model.UserProfile
 import com.google.firebase.Timestamp
@@ -19,26 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-
-data class WiiHopeUiState(
-    val booting: Boolean = true,
-    val hasAuthSession: Boolean = false,
-    val profile: UserProfile? = null,
-    val books: List<BibleBook> = emptyList(),
-    val music: List<AudioTrack> = emptyList(),
-    val publicQuotes: List<Quote> = emptyList(),
-    val privateQuotes: List<Quote> = emptyList(),
-    val musicLoading: Boolean = false,
-    val quotesLoading: Boolean = false,
-    val authLoading: Boolean = false,
-    val googlePending: Boolean = false,
-    val googleEmail: String = "",
-    val googleName: String = "",
-    val message: String? = null,
-    val error: String? = null,
-) {
-    val isLoggedIn: Boolean get() = profile != null || (hasAuthSession && !googlePending)
-}
 
 class WiiHopeViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = AuthRepository()
@@ -56,8 +35,8 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             _uiState.value = _uiState.value.copy(hasAuthSession = authRepository.isLoggedIn)
             loadSessionNow()
             _uiState.value = _uiState.value.copy(booting = false)
+            refreshMusic()
         }
-        refreshMusic()
         startProgressTicker()
     }
 

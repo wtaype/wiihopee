@@ -200,7 +200,7 @@ internal fun Oracion(
                                 }
                                 Column(Modifier.padding(start = 12.dp)) {
                                     Text("Padre Nuestro", style = WiText.h2)
-                                    Text("2 min Â· Oracion guiada", style = WiText.small)
+                                    Text("2 min · Oracion guiada", style = WiText.small)
                                 }
                             }
                             Text(

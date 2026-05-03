@@ -160,7 +160,7 @@ internal fun Ajustes(state: com.wiihope.app.feature.player.WiiHopeUiState, viewM
                     HorizontalDivider(color = WiCss.goldSoft.copy(alpha = 0.22f))
                     SettingsRow(Icons.Rounded.Lock, "Privacidad y seguridad", "Cuenta protegida")
                     HorizontalDivider(color = WiCss.goldSoft.copy(alpha = 0.22f))
-                    SettingsRow(Icons.Rounded.Info, "Acerca de WiiHope", "${Wii.version} Â· ${Wii.by}")
+                    SettingsRow(Icons.Rounded.Info, "Acerca de WiiHope", "${Wii.version} · ${Wii.by}")
                 }
             }
         }

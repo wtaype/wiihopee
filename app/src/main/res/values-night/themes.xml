@@ -1,9 +1,9 @@
 <resources>
     <style name="Theme.WiiHope.Starting" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:colorBackground">@color/wiihope_green_light</item>
-        <item name="android:statusBarColor">@color/wiihope_green_light</item>
-        <item name="android:navigationBarColor">@color/wiihope_green_light</item>
+        <item name="android:colorBackground">@color/wiihope_splash_system</item>
+        <item name="android:statusBarColor">@color/wiihope_splash_system</item>
+        <item name="android:navigationBarColor">@color/wiihope_splash_system</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:forceDarkAllowed">false</item>
@@ -11,8 +11,8 @@
 
     <style name="Theme.WiiHope" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
-        <item name="android:windowBackground">@color/wiihope_green_light</item>
-        <item name="android:colorBackground">@color/wiihope_green_light</item>
+        <item name="android:windowBackground">@color/wiihope_splash_system</item>
+        <item name="android:colorBackground">@color/wiihope_splash_system</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:statusBarColor">@color/wiihope_gold</item>
         <item name="android:navigationBarColor">@color/wiihope_white</item>

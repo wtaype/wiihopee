@@ -4,5 +4,6 @@
     <color name="wiihope_splash_system">#FFFFFF</color>
     <color name="wiihope_green_dark">#705D00</color>
     <color name="wiihope_gold">#FFDA34</color>
+    <color name="wiihope_icon_yellow">#FFE100</color>
     <color name="wiihope_white">#FFFFFF</color>
 </resources>

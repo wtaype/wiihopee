@@ -227,7 +227,7 @@ private fun QuoteCard(quote: Quote, viewModel: WiiHopeViewModel) {
             style = WiText.body.copy(fontStyle = FontStyle.Italic),
             modifier = Modifier.padding(vertical = 16.dp),
         )
-        Text("${quote.libro} Â· ${quote.nombreShow}", style = WiText.small)
+        Text("${quote.libro} · ${quote.nombreShow}", style = WiText.small)
     }
     if (confirmDelete) {
         AlertDialog(

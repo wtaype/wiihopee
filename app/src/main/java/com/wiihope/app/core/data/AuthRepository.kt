@@ -6,6 +6,8 @@ import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository(
@@ -38,7 +40,7 @@ class AuthRepository(
             getProfileByUid(uid)?.let { return it }
         }
         val email = currentEmail ?: return null
-        val query = firestore.collection("smiles").whereEqualTo("email", email.lowercase()).limit(1).get().await()
+        val query = firestore.collection("smiles").whereEqualTo("email", email.lowercase()).limit(1).fastGet()
         return query.documents.firstOrNull()?.let(UserProfile::fromFirestore)
     }
 
@@ -116,7 +118,12 @@ class AuthRepository(
     }
 
     private suspend fun getProfileByUid(uid: String): UserProfile? {
-        val query = firestore.collection("smiles").whereEqualTo("uid", uid).limit(1).get().await()
+        val query = firestore.collection("smiles").whereEqualTo("uid", uid).limit(1).fastGet()
         return query.documents.firstOrNull()?.let(UserProfile::fromFirestore)
     }
+
+    private suspend fun Query.fastGet() =
+        runCatching { get(Source.CACHE).await() }
+            .getOrElse { get(Source.DEFAULT).await() }
+            .let { cached -> if (cached.isEmpty) get(Source.DEFAULT).await() else cached }
 }
