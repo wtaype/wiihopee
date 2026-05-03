@@ -54,6 +54,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Search
@@ -119,7 +120,14 @@ import com.wiihope.app.ui.theme.WiText
 import kotlin.math.roundToLong
 
 @Composable
-internal fun MiniPlayer(state: PlaybackState, onToggle: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onSeek: (Long) -> Unit) {
+internal fun MiniPlayer(
+    state: PlaybackState,
+    onToggle: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onLoop: () -> Unit,
+    onSeek: (Long) -> Unit,
+) {
     val current = state.current ?: return
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp),
@@ -139,6 +147,12 @@ internal fun MiniPlayer(state: PlaybackState, onToggle: () -> Unit, onPrevious: 
                     Icon(if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = WiCss.white, modifier = Modifier.size(26.dp))
                 }
                 IconButton(onClick = onNext) { Icon(Icons.Rounded.SkipNext, null, modifier = Modifier.size(24.dp)) }
+                IconButton(
+                    onClick = onLoop,
+                    modifier = Modifier.clip(CircleShape).background(if (state.loopOne) WiCss.gold.copy(alpha = 0.40f) else Color.Transparent),
+                ) {
+                    Icon(Icons.Rounded.RepeatOne, null, tint = if (state.loopOne) WiCss.black else WiCss.text300, modifier = Modifier.size(21.dp))
+                }
             }
             if (state.durationMs > 0) {
                 Slider(

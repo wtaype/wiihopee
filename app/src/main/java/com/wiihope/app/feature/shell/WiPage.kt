@@ -30,6 +30,7 @@ enum class WiPage(val label: String, val navIndex: Int? = null) {
         val mainPages = listOf(Oracion, Biblia, Citas, Musica, Ajustes)
 
         fun fromLaunchScreen(value: String?): WiPage? = when (value) {
+            "prayer" -> Oracion
             "bible" -> Biblia
             "quotes" -> Citas
             "music", "player" -> Musica

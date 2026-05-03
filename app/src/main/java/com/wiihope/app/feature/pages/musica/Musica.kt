@@ -54,6 +54,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Search
@@ -128,6 +129,7 @@ internal fun Musica(
     onToggle: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
+    onLoop: () -> Unit,
 ) {
     val heroTrack = playback.current?.takeIf { it.source == TrackSource.Music } ?: tracks.firstOrNull()
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(22.dp)) {
@@ -144,6 +146,8 @@ internal fun Musica(
                 },
                 onPrevious = onPrevious,
                 onNext = onNext,
+                onLoop = onLoop,
+                loopOne = playback.loopOne,
             )
             if (loading) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 14.dp), color = WiCss.secondary)
         }
@@ -189,6 +193,8 @@ private fun MusicHero(
     onPlay: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
+    onLoop: () -> Unit,
+    loopOne: Boolean,
 ) {
     GlassCard(Modifier.fillMaxWidth(), intensity = 0.78f) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -210,6 +216,12 @@ private fun MusicHero(
                     Icon(if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = WiCss.black, modifier = Modifier.size(34.dp))
                 }
                 IconButton(onClick = onNext) { Icon(Icons.Rounded.SkipNext, null, tint = WiCss.primary, modifier = Modifier.size(30.dp)) }
+                IconButton(
+                    onClick = onLoop,
+                    modifier = Modifier.size(42.dp).clip(CircleShape).background(if (loopOne) WiCss.gold.copy(alpha = 0.42f) else Color.Transparent),
+                ) {
+                    Icon(Icons.Rounded.RepeatOne, null, tint = if (loopOne) WiCss.black else WiCss.primary, modifier = Modifier.size(24.dp))
+                }
             }
         }
     }

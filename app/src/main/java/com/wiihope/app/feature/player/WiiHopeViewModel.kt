@@ -7,9 +7,12 @@ import com.wiihope.app.core.audio.MediaControllerHolder
 import com.wiihope.app.core.audio.PlaybackState
 import com.wiihope.app.core.data.AuthRepository
 import com.wiihope.app.core.data.BibleCatalog
+import com.wiihope.app.core.data.BibleLikesRepository
 import com.wiihope.app.core.data.MusicRepository
 import com.wiihope.app.core.data.QuoteRepository
+import com.google.firebase.firestore.DocumentSnapshot
 import com.wiihope.app.core.model.AudioTrack
+import com.wiihope.app.core.model.BibleBook
 import com.wiihope.app.core.model.Quote
 import com.wiihope.app.core.model.UserProfile
 import com.google.firebase.Timestamp
@@ -21,9 +24,11 @@ import kotlinx.coroutines.launch
 
 class WiiHopeViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = AuthRepository()
+    private val bibleLikesRepository = BibleLikesRepository()
     private val musicRepository = MusicRepository()
     private val quoteRepository = QuoteRepository()
     private val mediaController = MediaControllerHolder(application.applicationContext)
+    private var publicQuotesCursor: DocumentSnapshot? = null
 
     private val _uiState = MutableStateFlow(WiiHopeUiState(books = BibleCatalog.books()))
     val uiState: StateFlow<WiiHopeUiState> = _uiState.asStateFlow()
@@ -64,7 +69,10 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             googleEmail = if (needsGoogleProfile) authRepository.currentEmail.orEmpty() else "",
             googleName = if (needsGoogleProfile) authRepository.currentEmail?.substringBefore("@").orEmpty() else "",
         )
-        if (profile != null) refreshQuotes()
+        if (profile != null) {
+            refreshQuotes()
+            refreshBibleLikes()
+        }
     }
 
     fun login(emailOrUser: String, password: String) {
@@ -76,6 +84,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             }.onSuccess { profile ->
                 _uiState.value = _uiState.value.copy(profile = profile, hasAuthSession = profile != null, authLoading = false, message = "Bienvenido")
                 refreshQuotes()
+                refreshBibleLikes()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(hasAuthSession = false, authLoading = false, error = e.cleanMessage())
             }
@@ -97,6 +106,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                         message = "Bienvenido",
                     )
                     refreshQuotes()
+                    refreshBibleLikes()
                 } else {
                     _uiState.value = _uiState.value.copy(
                         authLoading = false,
@@ -131,6 +141,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                     message = "Tu cuenta esta lista",
                 )
                 refreshQuotes()
+                refreshBibleLikes()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(authLoading = false, error = e.cleanMessage())
             }
@@ -156,6 +167,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             }.onSuccess { profile ->
                 _uiState.value = _uiState.value.copy(profile = profile, hasAuthSession = profile != null, authLoading = false, message = "Cuenta creada")
                 refreshQuotes()
+                refreshBibleLikes()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(authLoading = false, error = e.cleanMessage())
             }
@@ -173,7 +185,16 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
 
     fun logout() {
         authRepository.logout()
-        _uiState.value = _uiState.value.copy(profile = null, hasAuthSession = false, googlePending = false, publicQuotes = emptyList(), privateQuotes = emptyList())
+        _uiState.value = _uiState.value.copy(
+            profile = null,
+            hasAuthSession = false,
+            googlePending = false,
+            publicQuotes = emptyList(),
+            privateQuotes = emptyList(),
+            quotesTotal = 0L,
+            quotesHasMore = false,
+            bibleLikes = emptyList(),
+        )
     }
 
     fun updatePhoto(url: String) {
@@ -200,17 +221,91 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun refreshQuotes(forceServer: Boolean = false) {
-        val email = _uiState.value.profile?.email.orEmpty()
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(quotesLoading = true)
             runCatching {
-                val public = quoteRepository.loadPublicQuotes(forceServer = forceServer)
-                val private = if (email.isBlank()) emptyList() else quoteRepository.loadPrivateQuotes(email, forceServer = forceServer)
-                public to private
-            }.onSuccess { (public, private) ->
-                _uiState.value = _uiState.value.copy(publicQuotes = public, privateQuotes = private, quotesLoading = false)
+                val page = quoteRepository.loadPublicQuotesPage(forceServer = forceServer)
+                val total = runCatching { quoteRepository.countPublicQuotes() }.getOrDefault(_uiState.value.quotesTotal)
+                page to total
+            }.onSuccess { (page, total) ->
+                publicQuotesCursor = page.lastDoc
+                _uiState.value = _uiState.value.copy(
+                    publicQuotes = page.quotes,
+                    privateQuotes = emptyList(),
+                    quotesTotal = total,
+                    quotesHasMore = page.hasMore,
+                    quotesLoading = false,
+                    quotesLoadingMore = false,
+                )
             }.onFailure {
                 _uiState.value = _uiState.value.copy(quotesLoading = false, error = it.cleanMessage())
+            }
+        }
+    }
+
+    fun loadMoreQuotes() {
+        if (_uiState.value.quotesLoadingMore || !_uiState.value.quotesHasMore) return
+        val cursor = publicQuotesCursor ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(quotesLoadingMore = true)
+            runCatching { quoteRepository.loadPublicQuotesPage(startAfter = cursor, forceServer = true) }
+                .onSuccess { page ->
+                    publicQuotesCursor = page.lastDoc ?: publicQuotesCursor
+                    _uiState.value = _uiState.value.copy(
+                        publicQuotes = _uiState.value.publicQuotes + page.quotes,
+                        quotesHasMore = page.hasMore,
+                        quotesLoadingMore = false,
+                    )
+                }
+                .onFailure { _uiState.value = _uiState.value.copy(quotesLoadingMore = false, error = it.cleanMessage()) }
+        }
+    }
+
+    fun refreshBibleLikes(forceServer: Boolean = false) {
+        val usuario = _uiState.value.profile?.usuarioLimpio.orEmpty()
+        if (usuario.isBlank()) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(bibleLikesLoading = true)
+            runCatching { bibleLikesRepository.load(usuario, forceServer) }
+                .onSuccess { _uiState.value = _uiState.value.copy(bibleLikes = it, bibleLikesLoading = false) }
+                .onFailure { _uiState.value = _uiState.value.copy(bibleLikesLoading = false, error = it.cleanMessage()) }
+        }
+    }
+
+    fun toggleBibleLike(book: BibleBook, chapter: Int, track: AudioTrack) {
+        val profile = _uiState.value.profile ?: return
+        val docId = com.wiihope.app.core.model.BibleLike.docId(profile.usuario, book.slug, chapter)
+        val current = _uiState.value.bibleLikes
+        val isLiked = current.any { it.id == docId }
+        val optimisticLike = com.wiihope.app.core.model.BibleLike(
+            id = docId,
+            usuario = profile.usuarioLimpio,
+            email = profile.email,
+            libro = book.name,
+            slug = book.slug,
+            capitulo = chapter,
+            trackId = track.id,
+            titulo = "Capitulo $chapter",
+            subtitulo = book.name,
+        )
+        val optimistic = if (isLiked) {
+            current.filterNot { it.id == docId }
+        } else {
+            current.filterNot { it.id == docId } + optimisticLike
+        }
+        _uiState.value = _uiState.value.copy(bibleLikes = optimistic)
+        viewModelScope.launch {
+            runCatching {
+                if (isLiked) {
+                    bibleLikesRepository.delete(profile, book, chapter)
+                } else {
+                    bibleLikesRepository.save(profile, book, chapter, track)
+                }
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(
+                    bibleLikes = current,
+                    error = it.cleanMessage(),
+                )
             }
         }
     }
@@ -237,21 +332,28 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun toggleQuoteFavorite(quote: Quote) {
+        val current = _uiState.value.publicQuotes
+        val updated = current.map { if (it.id == quote.id) it.copy(favorito = !it.favorito) else it }
+            .sortedWith(compareByDescending<Quote> { it.favorito }.thenByDescending { it.creado?.seconds ?: 0L })
+        _uiState.value = _uiState.value.copy(publicQuotes = updated)
         viewModelScope.launch {
             runCatching { quoteRepository.toggleFavorite(quote) }
-                .onSuccess { refreshQuotes() }
-                .onFailure { _uiState.value = _uiState.value.copy(error = it.cleanMessage()) }
+                .onFailure { _uiState.value = _uiState.value.copy(publicQuotes = current, error = it.cleanMessage()) }
         }
     }
 
     fun deleteQuote(quote: Quote) {
+        val current = _uiState.value.publicQuotes
+        _uiState.value = _uiState.value.copy(
+            publicQuotes = current.filterNot { it.id == quote.id },
+            quotesTotal = (_uiState.value.quotesTotal - 1).coerceAtLeast(0L),
+        )
         viewModelScope.launch {
             runCatching { quoteRepository.deleteQuote(quote) }
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(message = "Cita eliminada")
-                    refreshQuotes()
                 }
-                .onFailure { _uiState.value = _uiState.value.copy(error = it.cleanMessage()) }
+                .onFailure { _uiState.value = _uiState.value.copy(publicQuotes = current, quotesTotal = _uiState.value.quotesTotal + 1, error = it.cleanMessage()) }
         }
     }
 
@@ -259,6 +361,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
     fun togglePlayback() = mediaController.toggle()
     fun next() = mediaController.next()
     fun previous() = mediaController.previous()
+    fun toggleLoopOne() = mediaController.toggleLoopOne()
     fun seekTo(positionMs: Long) = mediaController.seekTo(positionMs)
 
     private fun startProgressTicker() {

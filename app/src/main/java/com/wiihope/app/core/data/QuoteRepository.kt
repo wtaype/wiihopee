@@ -1,24 +1,49 @@
 package com.wiihope.app.core.data
 
 import com.wiihope.app.core.model.Quote
+import com.google.firebase.firestore.AggregateSource
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 
+data class QuotePage(
+    val quotes: List<Quote>,
+    val lastDoc: DocumentSnapshot?,
+    val hasMore: Boolean,
+)
+
 class QuoteRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
-    suspend fun loadPublicQuotes(limit: Long = 100, forceServer: Boolean = false): List<Quote> {
-        val snapshot = orderedQuery(limit).fastGet(forceServer)
-        return snapshot.documents.map(Quote::fromFirestore).filter { it.publico }
+    suspend fun loadPublicQuotesPage(
+        limit: Long = 7,
+        startAfter: DocumentSnapshot? = null,
+        forceServer: Boolean = false,
+    ): QuotePage {
+        val query = publicOrderedQuery(limit + 1).let { base ->
+            if (startAfter == null) base else base.startAfter(startAfter)
+        }
+        val snapshot = query.fastGet(forceServer)
+        val docs = snapshot.documents
+        val visibleDocs = docs.take(limit.toInt())
+        return QuotePage(
+            quotes = visibleDocs.map(Quote::fromFirestore),
+            lastDoc = visibleDocs.lastOrNull(),
+            hasMore = docs.size > limit,
+        )
     }
 
-    suspend fun loadPrivateQuotes(email: String, limit: Long = 100, forceServer: Boolean = false): List<Quote> {
-        val snapshot = orderedQuery(limit).fastGet(forceServer)
-        return snapshot.documents.map(Quote::fromFirestore).filter { !it.publico && it.email == email }
-    }
-
-    private fun orderedQuery(limit: Long) =
+    suspend fun countPublicQuotes(): Long =
         firestore.collection("wicitas")
+            .whereEqualTo("publico", true)
+            .count()
+            .get(AggregateSource.SERVER)
+            .await()
+            .count
+
+    private fun publicOrderedQuery(limit: Long) =
+        firestore.collection("wicitas")
+            .whereEqualTo("publico", true)
             .orderBy("favorito", Query.Direction.DESCENDING)
             .orderBy("creado", Query.Direction.DESCENDING)
             .limit(limit)

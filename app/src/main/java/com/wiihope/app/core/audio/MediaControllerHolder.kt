@@ -3,6 +3,7 @@ package com.wiihope.app.core.audio
 import android.content.ComponentName
 import android.content.Context
 import android.net.Uri
+import android.os.Bundle
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -19,6 +20,7 @@ data class PlaybackState(
     val isPlaying: Boolean = false,
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
+    val loopOne: Boolean = false,
 )
 
 class MediaControllerHolder(private val context: Context) {
@@ -85,6 +87,17 @@ class MediaControllerHolder(private val context: Context) {
         controller?.seekToPreviousMediaItem()
     }
 
+    fun toggleLoopOne() {
+        controller?.run {
+            repeatMode = if (repeatMode == Player.REPEAT_MODE_ONE) {
+                Player.REPEAT_MODE_OFF
+            } else {
+                Player.REPEAT_MODE_ONE
+            }
+            publish(this)
+        }
+    }
+
     fun refresh() {
         controller?.let(::publish)
     }
@@ -103,6 +116,7 @@ class MediaControllerHolder(private val context: Context) {
             isPlaying = player.isPlaying,
             positionMs = player.currentPosition.coerceAtLeast(0L),
             durationMs = player.duration.takeIf { it > 0 } ?: 0L,
+            loopOne = player.repeatMode == Player.REPEAT_MODE_ONE,
         )
     }
 
@@ -112,6 +126,7 @@ class MediaControllerHolder(private val context: Context) {
             .setArtist(artist)
             .setDescription(subtitle)
             .setArtworkUri(artworkUrl?.let(Uri::parse))
+            .setExtras(Bundle().apply { putString("source", source.name) })
             .build()
         return MediaItem.Builder()
             .setMediaId(id)

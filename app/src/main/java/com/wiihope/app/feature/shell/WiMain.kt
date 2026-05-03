@@ -42,8 +42,25 @@ internal fun WiMain(page: WiPage, state: WiiHopeUiState, playback: PlaybackState
     Showi(target = page, modifier = Modifier.fillMaxSize()) { current ->
         when (current) {
             WiPage.Oracion -> Oracion(state.profile?.nombre.orEmpty(), playback, viewModel::play, viewModel::togglePlayback)
-            WiPage.Biblia -> Biblia(state.books, playback, viewModel::play, viewModel::togglePlayback)
-            WiPage.Citas -> Citas(state.publicQuotes, state.privateQuotes, state.quotesLoading, viewModel, onRefresh = { viewModel.refreshQuotes(forceServer = true) })
+            WiPage.Biblia -> Biblia(
+                books = state.books,
+                likes = state.bibleLikes,
+                playback = playback,
+                onPlay = viewModel::play,
+                onToggle = viewModel::togglePlayback,
+                onToggleLike = viewModel::toggleBibleLike,
+            )
+            WiPage.Citas -> Citas(
+                publicQuotes = state.publicQuotes,
+                total = state.quotesTotal,
+                hasMore = state.quotesHasMore,
+                loading = state.quotesLoading,
+                loadingMore = state.quotesLoadingMore,
+                currentUser = state.profile,
+                viewModel = viewModel,
+                onRefresh = { viewModel.refreshQuotes(forceServer = true) },
+                onLoadMore = viewModel::loadMoreQuotes,
+            )
             WiPage.Musica -> Musica(
                 tracks = state.music,
                 loading = state.musicLoading,
@@ -53,6 +70,7 @@ internal fun WiMain(page: WiPage, state: WiiHopeUiState, playback: PlaybackState
                 onToggle = viewModel::togglePlayback,
                 onPrevious = viewModel::previous,
                 onNext = viewModel::next,
+                onLoop = viewModel::toggleLoopOne,
             )
             WiPage.Ajustes -> Ajustes(state, viewModel)
             WiPage.Descubre -> Descubre()

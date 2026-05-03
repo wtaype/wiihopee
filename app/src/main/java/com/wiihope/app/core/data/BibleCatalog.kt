@@ -40,6 +40,7 @@ object BibleCatalog {
             BibleBook(
                 id = index + 1,
                 name = entry.key,
+                slug = entry.key.slug(),
                 chapters = entry.value,
                 baseUrl = BaseUrl,
                 fileName = entry.key.replace(" ", "_"),
@@ -47,4 +48,15 @@ object BibleCatalog {
             ).also { track += entry.value }
         }
     }
+
+    private fun String.slug(): String =
+        lowercase()
+            .replace("á", "a")
+            .replace("é", "e")
+            .replace("í", "i")
+            .replace("ó", "o")
+            .replace("ú", "u")
+            .replace("ñ", "n")
+            .replace(Regex("[^a-z0-9]+"), "-")
+            .trim('-')
 }

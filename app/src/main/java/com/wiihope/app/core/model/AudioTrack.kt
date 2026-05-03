@@ -1,6 +1,6 @@
 package com.wiihope.app.core.model
 
-enum class TrackSource { Bible, Music }
+enum class TrackSource { Prayer, Bible, Music }
 
 data class AudioTrack(
     val id: String,

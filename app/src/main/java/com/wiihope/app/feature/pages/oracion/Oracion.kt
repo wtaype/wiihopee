@@ -132,7 +132,7 @@ internal fun Oracion(
             artist = "WiiHope Oracion",
             subtitle = "Lectura suave",
             url = "https://github.com/geluksee/nice/raw/refs/heads/main/paz.mp3",
-            source = TrackSource.Music,
+            source = TrackSource.Prayer,
             artworkRes = R.drawable.jesus,
         )
     }

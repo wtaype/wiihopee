@@ -76,7 +76,14 @@ internal fun MainShell(
         bottomBar = {
             Column {
                 if (currentPage != WiPage.Oracion) {
-                    MiniPlayer(playback, viewModel::togglePlayback, viewModel::previous, viewModel::next, viewModel::seekTo)
+                    MiniPlayer(
+                        state = playback,
+                        onToggle = viewModel::togglePlayback,
+                        onPrevious = viewModel::previous,
+                        onNext = viewModel::next,
+                        onLoop = viewModel::toggleLoopOne,
+                        onSeek = viewModel::seekTo,
+                    )
                 }
                 NavMain(lastMainPage) { page -> openPage(page) }
             }
