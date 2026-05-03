@@ -197,13 +197,13 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun refreshQuotes() {
+    fun refreshQuotes(forceServer: Boolean = false) {
         val email = _uiState.value.profile?.email.orEmpty()
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(quotesLoading = true)
             runCatching {
-                val public = quoteRepository.loadPublicQuotes()
-                val private = if (email.isBlank()) emptyList() else quoteRepository.loadPrivateQuotes(email)
+                val public = quoteRepository.loadPublicQuotes(forceServer = forceServer)
+                val private = if (email.isBlank()) emptyList() else quoteRepository.loadPrivateQuotes(email, forceServer = forceServer)
                 public to private
             }.onSuccess { (public, private) ->
                 _uiState.value = _uiState.value.copy(publicQuotes = public, privateQuotes = private, quotesLoading = false)

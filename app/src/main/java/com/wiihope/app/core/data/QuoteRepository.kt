@@ -3,25 +3,32 @@ package com.wiihope.app.core.data
 import com.wiihope.app.core.model.Quote
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 
 class QuoteRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
-    suspend fun loadPublicQuotes(limit: Long = 100): List<Quote> {
-        val snapshot = firestore.collection("wicitas")
-            .orderBy("creado", Query.Direction.DESCENDING)
-            .limit(limit)
-            .get()
-            .await()
+    suspend fun loadPublicQuotes(limit: Long = 100, forceServer: Boolean = false): List<Quote> {
+        val snapshot = orderedQuery(limit).fastGet(forceServer)
         return snapshot.documents.map(Quote::fromFirestore).filter { it.publico }
     }
 
-    suspend fun loadPrivateQuotes(email: String, limit: Long = 100): List<Quote> {
-        val snapshot = firestore.collection("wicitas")
+    suspend fun loadPrivateQuotes(email: String, limit: Long = 100, forceServer: Boolean = false): List<Quote> {
+        val snapshot = orderedQuery(limit).fastGet(forceServer)
+        return snapshot.documents.map(Quote::fromFirestore).filter { !it.publico && it.email == email }
+    }
+
+    private fun orderedQuery(limit: Long) =
+        firestore.collection("wicitas")
+            .orderBy("favorito", Query.Direction.DESCENDING)
             .orderBy("creado", Query.Direction.DESCENDING)
             .limit(limit)
-            .get()
-            .await()
-        return snapshot.documents.map(Quote::fromFirestore).filter { !it.publico && it.email == email }
+
+    private suspend fun Query.fastGet(forceServer: Boolean) = if (forceServer) {
+        get(Source.SERVER).await()
+    } else {
+        runCatching { get(Source.CACHE).await() }
+            .getOrElse { get(Source.DEFAULT).await() }
+            .let { cached -> if (cached.isEmpty) get(Source.DEFAULT).await() else cached }
     }
 
     suspend fun saveQuote(quote: Quote) {
