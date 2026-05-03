@@ -7,14 +7,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -28,28 +31,41 @@ import androidx.compose.material.icons.automirrored.rounded.Login
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Article
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ContactSupport
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Feedback
 import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Mail
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.PrivacyTip
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.StickyNote2
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.VolunteerActivism
+import androidx.compose.material.icons.rounded.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
@@ -121,6 +137,15 @@ import kotlin.math.roundToLong
 
 private enum class AuthMode { Login, Register, Recover }
 private enum class MainTab(val label: String) { Oracion("Oracion"), Biblia("Biblia"), Citas("Citas"), Musica("Musica"), Ajustes("Ajustes") }
+private enum class MenuPage { Menu, Blog, PrayerRequest, About, Discover, Messages, Notifications, Planning, NewPost, Notes, Terms, Privacy, Feedback, Contact }
+
+private data class WiRouteItem(
+    val title: String,
+    val subtitle: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val tab: Int? = null,
+    val page: MenuPage? = null,
+)
 
 @Composable
 fun WiiHopeRoot(viewModel: WiiHopeViewModel, launchScreen: String?, onGoogleClick: () -> Unit) {
@@ -316,6 +341,7 @@ private fun RecoverCard(loading: Boolean, onRecover: (String) -> Unit, onBack: (
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun MainShell(
     state: com.wiihope.app.feature.player.WiiHopeUiState,
     playback: PlaybackState,
@@ -326,6 +352,12 @@ private fun MainShell(
     val pagerState = rememberPagerState(pageCount = { MainTab.entries.size })
     val tab = pagerState.currentPage
     val scope = rememberCoroutineScope()
+    var menuOpen by remember { mutableStateOf(false) }
+    var menuPage by remember { mutableStateOf(MenuPage.Menu) }
+    val openMenuPage: (MenuPage) -> Unit = {
+        menuPage = it
+        menuOpen = true
+    }
     LaunchedEffect(launchScreen) {
         val target = when (launchScreen) {
             "bible" -> 1
@@ -338,6 +370,14 @@ private fun MainShell(
     }
     Scaffold(
         containerColor = Color.Transparent,
+        topBar = {
+            AppHeader(
+                onHome = { scope.launch { pagerState.animateScrollToPage(0) } },
+                onMessages = { openMenuPage(MenuPage.Messages) },
+                onNotifications = { openMenuPage(MenuPage.Notifications) },
+                onMenu = { openMenuPage(MenuPage.Menu) },
+            )
+        },
         floatingActionButton = {
             if (tab == 2) QuoteFab(viewModel)
         },
@@ -346,24 +386,7 @@ private fun MainShell(
                 if (tab != 0) {
                     MiniPlayer(playback, viewModel::togglePlayback, viewModel::previous, viewModel::next, viewModel::seekTo)
                 }
-                NavigationBar(containerColor = WiCss.white.copy(alpha = 0.56f)) {
-                    val icons = listOf(Icons.Rounded.VolunteerActivism, Icons.Rounded.Book, Icons.Rounded.Favorite, Icons.Rounded.Headphones, Icons.Rounded.Settings)
-                    MainTab.entries.forEachIndexed { index, item ->
-                        NavigationBarItem(
-                            selected = tab == index,
-                            onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                            icon = { Icon(icons[index], contentDescription = item.label, modifier = Modifier.size(20.dp)) },
-                            label = { Text(item.label) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = WiCss.primary,
-                                selectedTextColor = WiCss.primary,
-                                indicatorColor = WiCss.gold.copy(alpha = 0.36f),
-                                unselectedIconColor = WiCss.gray,
-                                unselectedTextColor = WiCss.gray,
-                            ),
-                        )
-                    }
-                }
+                BottomNavGlass(tab) { index -> scope.launch { pagerState.animateScrollToPage(index) } }
             }
         },
     ) { padding ->
@@ -387,6 +410,303 @@ private fun MainShell(
                 }
             }
         }
+    }
+    if (menuOpen) {
+        Box(Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(WiCss.black.copy(alpha = 0.18f))
+                    .clickable { menuOpen = false },
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .width(336.dp)
+                    .clip(RoundedCornerShape(topStart = 28.dp, bottomStart = 28.dp))
+                    .background(WiCss.cream),
+            ) {
+            WiRoutesSheet(
+                page = menuPage,
+                role = state.profile?.rol.orEmpty(),
+                onBack = { menuPage = MenuPage.Menu },
+                onNavigateTab = { index ->
+                    menuOpen = false
+                    scope.launch { pagerState.animateScrollToPage(index) }
+                },
+                onOpenPage = { menuPage = it },
+                onLogout = {
+                    menuOpen = false
+                    viewModel.logout()
+                },
+            )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppHeader(onHome: () -> Unit, onMessages: () -> Unit, onNotifications: () -> Unit, onMenu: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.Transparent)
+            .statusBarsPadding()
+            .height(54.dp)
+            .padding(horizontal = 18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            Wii.app,
+            style = WiText.h3.copy(color = WiCss.primary),
+            maxLines = 1,
+            modifier = Modifier.weight(1f).clickable(onClick = onHome),
+        )
+        HeaderIcon(Icons.Rounded.Mail, "Mensajes", onMessages)
+        HeaderIcon(Icons.Rounded.Notifications, "Notificaciones", onNotifications)
+        HeaderIcon(Icons.Rounded.Menu, "Menu", onMenu)
+    }
+}
+
+@Composable
+private fun HeaderIcon(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(icon, contentDescription = label, tint = WiCss.primary, modifier = Modifier.size(21.dp))
+    }
+}
+
+@Composable
+private fun WiRoutesSheet(
+    page: MenuPage,
+    role: String,
+    onBack: () -> Unit,
+    onNavigateTab: (Int) -> Unit,
+    onOpenPage: (MenuPage) -> Unit,
+    onLogout: () -> Unit,
+) {
+    when (page) {
+        MenuPage.Menu -> WiMenuHome(role, onNavigateTab, onOpenPage, onLogout)
+        MenuPage.Blog -> WiMenuDetail("Super Blog", "Articulos, testimonios y reflexiones para alimentar la fe cada dia.", Icons.Rounded.Article, onBack) {
+            MenuInfoCard("Proxima conexion", "Aqui conectaremos los posts del blog web/Firestore con lectura nativa, busqueda y favoritos.")
+            MenuInfoCard("Categorias", "Devocionales, testimonios, familia, estudio biblico y vida diaria.")
+        }
+        MenuPage.PrayerRequest -> WiMenuDetail("Ora por mi", "Un espacio para escribir una peticion y recibir acompanamiento con esperanza.", Icons.Rounded.ChatBubble, onBack) {
+            MenuInfoCard("Peticion de oracion", "Preparado para un formulario privado con motivo, mensaje y estado de seguimiento.")
+            MenuInfoCard("Acompanamiento", "Luego podremos conectar respuestas, mensajes y notificaciones espirituales.")
+        }
+        MenuPage.About -> WiMenuDetail("Acerca de WiiHope", "Una app de fe creada con amor para orar, escuchar, leer y compartir esperanza.", Icons.Rounded.Info, onBack) {
+            MenuInfoCard(Wii.app, "${Wii.desc}. Version ${Wii.version}.")
+            MenuInfoCard("Creado por", "${Wii.by} · ${Wii.link}")
+        }
+        MenuPage.Discover -> WiMenuDetail("Descubre", "Explora todo lo que WiiHope puede hacer por tu vida espiritual.", Icons.Rounded.Explore, onBack) {
+            MenuInfoCard("Audio Biblia", "Nuevo Testamento por libros y capitulos.")
+            MenuInfoCard("Musica y oracion", "Player persistente, meditacion y contenido cristiano.")
+            MenuInfoCard("Citas", "Promesas favoritas y notas privadas para guardar.")
+        }
+        MenuPage.Messages -> WiMenuDetail("Mensajes", "Centro de conversaciones y acompanamiento.", Icons.Rounded.Mail, onBack) {
+            MenuInfoCard("Bandeja", "Pronto conectaremos mensajes de comunidad, respuestas de oracion y avisos personales.")
+        }
+        MenuPage.Notifications -> WiMenuDetail("Notificaciones", "Recordatorios y novedades importantes.", Icons.Rounded.Notifications, onBack) {
+            MenuInfoCard("FCM listo", "La base ya puede recibir payloads para abrir Biblia, Citas, Musica o Ajustes.")
+        }
+        MenuPage.Planning -> WiMenuDetail("Planificar", "Herramientas para preparar contenido, devocionales y publicaciones.", Icons.Rounded.RocketLaunch, onBack) {
+            MenuInfoCard("Roadmap", "Aqui creceran planes de lectura, borradores y agenda espiritual.")
+        }
+        MenuPage.NewPost -> WiMenuDetail("Nuevo Post", "Crear reflexiones y contenido para el blog.", Icons.Rounded.Add, onBack) {
+            MenuInfoCard("Editor", "Reservado para editor nativo con titulo, categoria, portada y contenido.")
+        }
+        MenuPage.Notes -> WiMenuDetail("Notas", "Ideas, apuntes y pensamientos guardados.", Icons.Rounded.StickyNote2, onBack) {
+            MenuInfoCard("Notas privadas", "Luego conectaremos una coleccion privada por usuario.")
+        }
+        MenuPage.Terms -> WiMenuDetail("Terminos", "Reglas simples para cuidar la comunidad.", Icons.Rounded.Description, onBack) {
+            MenuInfoCard("Uso responsable", "WiiHope acompana espiritualmente, pero no reemplaza ayuda profesional cuando sea necesaria.")
+        }
+        MenuPage.Privacy -> WiMenuDetail("Privacidad", "Tu informacion debe estar protegida y clara.", Icons.Rounded.PrivacyTip, onBack) {
+            MenuInfoCard("Datos", "Usamos Firebase Auth y Firestore para guardar perfil, citas, preferencias y tokens de notificacion.")
+        }
+        MenuPage.Feedback -> WiMenuDetail("Feedback", "Tus ideas ayudan a mejorar WiiHope.", Icons.Rounded.Feedback, onBack) {
+            MenuInfoCard("Sugerencias", "Preparado para reportes, propuestas y comentarios desde la app.")
+        }
+        MenuPage.Contact -> WiMenuDetail("Contacto", "Canales para hablar con el equipo.", Icons.Rounded.ContactSupport, onBack) {
+            MenuInfoCard("Soporte", "Pronto agregaremos email, redes y formulario directo.")
+        }
+    }
+}
+
+@Composable
+private fun WiMenuHome(role: String, onNavigateTab: (Int) -> Unit, onOpenPage: (MenuPage) -> Unit, onLogout: () -> Unit) {
+    val commonRoutes = listOf(
+        WiRouteItem("Descubre", "Explora toda la experiencia WiiHope", Icons.Rounded.Explore, page = MenuPage.Discover),
+        WiRouteItem("Super Blog", "Reflexiones y testimonios", Icons.Rounded.Article, page = MenuPage.Blog),
+        WiRouteItem("Ora por mi", "Peticiones de oracion", Icons.Rounded.ChatBubble, page = MenuPage.PrayerRequest),
+        WiRouteItem("Acerca", "Historia, mision y version", Icons.Rounded.Info, page = MenuPage.About),
+    )
+    val roleRoutes = when (role.lowercase()) {
+        "admin" -> listOf(
+            WiRouteItem("Plataforma", "Panel general", Icons.Rounded.Dashboard, page = MenuPage.Discover),
+            WiRouteItem("Mensajes", "Centro de conversaciones", Icons.Rounded.Mail, page = MenuPage.Messages),
+        )
+        "gestor", "empresa" -> listOf(
+            WiRouteItem("Dashboard", "Resumen de actividad", Icons.Rounded.Dashboard, page = MenuPage.Discover),
+            WiRouteItem("Mensajes", "Centro de conversaciones", Icons.Rounded.Mail, page = MenuPage.Messages),
+        )
+        else -> listOf(
+            WiRouteItem("Dashboard", "Tu espacio WiiHope", Icons.Rounded.Dashboard, page = MenuPage.Discover),
+            WiRouteItem("Planificar", "Ideas y devocionales", Icons.Rounded.RocketLaunch, page = MenuPage.Planning),
+            WiRouteItem("Nuevo Post", "Publicar reflexion", Icons.Rounded.Add, page = MenuPage.NewPost),
+            WiRouteItem("Notas", "Apuntes privados", Icons.Rounded.StickyNote2, page = MenuPage.Notes),
+            WiRouteItem("Mensajes", "Centro de conversaciones", Icons.Rounded.Mail, page = MenuPage.Messages),
+        )
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().statusBarsPadding(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(painterResource(R.drawable.logo), contentDescription = "Logo", modifier = Modifier.size(48.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+                Column(Modifier.padding(start = 12.dp).weight(1f)) {
+                    Text("Menu", style = WiText.h2)
+                    Text("Paginas extra y modulos nuevos", style = WiText.small)
+                }
+                GoldPill(role.ifBlank { "smile" })
+            }
+        }
+        item { MenuSection("Nuevas paginas") }
+        items(commonRoutes) { item -> WiRouteRow(item, onNavigateTab, onOpenPage) }
+        item { MenuSection("Tu cuenta") }
+        items(roleRoutes) { item -> WiRouteRow(item, onNavigateTab, onOpenPage) }
+        item { MenuSection("Legal y contacto") }
+        items(
+            listOf(
+                WiRouteItem("Terminos", "Condiciones de uso", Icons.Rounded.Description, page = MenuPage.Terms),
+                WiRouteItem("Privacidad", "Como cuidamos tus datos", Icons.Rounded.PrivacyTip, page = MenuPage.Privacy),
+                WiRouteItem("Feedback", "Ideas y mejoras", Icons.Rounded.Feedback, page = MenuPage.Feedback),
+                WiRouteItem("Contacto", "Hablar con el equipo", Icons.Rounded.ContactSupport, page = MenuPage.Contact),
+            )
+        ) { item -> WiRouteRow(item, onNavigateTab, onOpenPage) }
+        item {
+            WiButton("Cerrar sesion", onLogout, Modifier.fillMaxWidth().padding(top = 4.dp), Icons.AutoMirrored.Rounded.Logout, color = WiCss.error, outlined = true)
+            Spacer(Modifier.height(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun MenuSection(title: String) {
+    Text(title.uppercase(), style = WiText.label.copy(color = WiCss.secondary), modifier = Modifier.padding(top = 8.dp, start = 4.dp))
+}
+
+@Composable
+private fun WiRouteRow(item: WiRouteItem, onNavigateTab: (Int) -> Unit, onOpenPage: (MenuPage) -> Unit) {
+    GlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        intensity = 0.50f,
+        onClick = {
+            item.tab?.let(onNavigateTab)
+            item.page?.let(onOpenPage)
+        },
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(42.dp).clip(CircleShape).background(WiCss.gold.copy(alpha = 0.20f)), contentAlignment = Alignment.Center) {
+                Icon(item.icon, null, tint = WiCss.primary, modifier = Modifier.size(19.dp))
+            }
+            Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                Text(item.title, style = WiText.h3)
+                Text(item.subtitle, style = WiText.tiny, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Icon(Icons.Rounded.KeyboardArrowRight, null, tint = WiCss.gray, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun WiMenuDetail(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onBack: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack, modifier = Modifier.clip(CircleShape).background(WiCss.white.copy(alpha = 0.62f))) {
+                    Icon(Icons.Rounded.ArrowBack, null, tint = WiCss.primary, modifier = Modifier.size(20.dp))
+                }
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text(title, style = WiText.h2)
+                    Text(subtitle, style = WiText.small)
+                }
+                Box(Modifier.size(46.dp).clip(CircleShape).background(WiCss.gold), contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = WiCss.black, modifier = Modifier.size(21.dp))
+                }
+            }
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+            Spacer(Modifier.height(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun MenuInfoCard(title: String, body: String) {
+    GlassCard(Modifier.fillMaxWidth(), intensity = 0.58f) {
+        Text(title, style = WiText.h3)
+        Text(body, style = WiText.body, modifier = Modifier.padding(top = 6.dp))
+    }
+}
+
+@Composable
+private fun BottomNavGlass(selectedTab: Int, onSelected: (Int) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp)
+            .background(WiCss.white)
+            .padding(horizontal = 8.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        val icons = listOf(Icons.Rounded.VolunteerActivism, Icons.Rounded.Book, Icons.Rounded.Favorite, Icons.Rounded.Headphones, Icons.Rounded.Settings)
+        MainTab.entries.forEachIndexed { index, item ->
+            BottomNavItemGlass(
+                label = item.label,
+                icon = icons[index],
+                selected = selectedTab == index,
+                onClick = { onSelected(index) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun BottomNavItemGlass(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(if (selected) WiCss.gold.copy(alpha = 0.20f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(icon, contentDescription = label, tint = if (selected) WiCss.primary else WiCss.gray.copy(alpha = 0.72f), modifier = Modifier.size(18.dp))
+        Text(label, style = WiText.tiny.copy(color = if (selected) WiCss.primary else WiCss.gray), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

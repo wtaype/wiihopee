@@ -2,6 +2,7 @@ package com.wiihope.app
 
 import android.Manifest
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -24,6 +25,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.statusBarColor = Color.parseColor("#FFDA34")
+        window.navigationBarColor = Color.WHITE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        }
         launchScreen = intent?.getStringExtra("screen")
         setContent {
             val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }

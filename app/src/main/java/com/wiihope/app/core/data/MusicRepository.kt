@@ -25,7 +25,7 @@ class MusicRepository(private val firestore: FirebaseFirestore = FirebaseFiresto
                 subtitle = doc.getString("tag").orEmpty(),
                 url = url,
                 source = TrackSource.Music,
-                artworkRes = R.drawable.logo,
+                artworkRes = R.drawable.album,
             )
         }
     }

@@ -1,5 +1,7 @@
 <resources>
-    <color name="wiihope_green">#4CAF50</color>
-    <color name="wiihope_green_light">#B9F6CA</color>
-    <color name="wiihope_green_dark">#2E7D32</color>
+    <color name="wiihope_green">#FFDA34</color>
+    <color name="wiihope_green_light">#FFF8D1</color>
+    <color name="wiihope_green_dark">#705D00</color>
+    <color name="wiihope_gold">#FFDA34</color>
+    <color name="wiihope_white">#FFFFFF</color>
 </resources>

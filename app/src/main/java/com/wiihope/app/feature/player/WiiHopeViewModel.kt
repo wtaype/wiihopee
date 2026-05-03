@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 
 data class WiiHopeUiState(
     val booting: Boolean = true,
+    val hasAuthSession: Boolean = false,
     val profile: UserProfile? = null,
     val books: List<BibleBook> = emptyList(),
     val music: List<AudioTrack> = emptyList(),
@@ -36,7 +37,7 @@ data class WiiHopeUiState(
     val message: String? = null,
     val error: String? = null,
 ) {
-    val isLoggedIn: Boolean get() = profile != null
+    val isLoggedIn: Boolean get() = profile != null || (hasAuthSession && !googlePending)
 }
 
 class WiiHopeViewModel(application: Application) : AndroidViewModel(application) {
@@ -52,8 +53,9 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
     init {
         mediaController.connect()
         viewModelScope.launch {
-            delay(650)
-            loadSession()
+            _uiState.value = _uiState.value.copy(hasAuthSession = authRepository.isLoggedIn)
+            loadSessionNow()
+            delay(220)
             _uiState.value = _uiState.value.copy(booting = false)
         }
         refreshMusic()
@@ -66,10 +68,22 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
 
     fun loadSession() {
         viewModelScope.launch {
-            val profile = runCatching { authRepository.getProfile() }.getOrNull()
-            _uiState.value = _uiState.value.copy(profile = profile)
-            if (profile != null) refreshQuotes()
+            loadSessionNow()
         }
+    }
+
+    private suspend fun loadSessionNow() {
+        if (!authRepository.isLoggedIn) {
+            _uiState.value = _uiState.value.copy(profile = null, hasAuthSession = false)
+            return
+        }
+        val profile = runCatching { authRepository.getProfile() }.getOrNull()
+        _uiState.value = _uiState.value.copy(
+            profile = profile,
+            hasAuthSession = authRepository.isLoggedIn,
+            googlePending = false,
+        )
+        if (profile != null) refreshQuotes()
     }
 
     fun login(emailOrUser: String, password: String) {
@@ -79,10 +93,10 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                 authRepository.login(emailOrUser, password)
                 authRepository.getProfile()
             }.onSuccess { profile ->
-                _uiState.value = _uiState.value.copy(profile = profile, authLoading = false, message = "Bienvenido")
+                _uiState.value = _uiState.value.copy(profile = profile, hasAuthSession = profile != null, authLoading = false, message = "Bienvenido")
                 refreshQuotes()
             }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(authLoading = false, error = e.cleanMessage())
+                _uiState.value = _uiState.value.copy(hasAuthSession = false, authLoading = false, error = e.cleanMessage())
             }
         }
     }
@@ -96,6 +110,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                 if (profile != null) {
                     _uiState.value = _uiState.value.copy(
                         profile = profile,
+                        hasAuthSession = true,
                         googlePending = false,
                         authLoading = false,
                         message = "Bienvenido",
@@ -104,6 +119,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                 } else {
                     _uiState.value = _uiState.value.copy(
                         authLoading = false,
+                        hasAuthSession = false,
                         googlePending = true,
                         googleEmail = authRepository.currentEmail.orEmpty(),
                         googleName = authRepository.currentEmail?.substringBefore("@").orEmpty(),
@@ -111,7 +127,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                     )
                 }
             }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(authLoading = false, error = e.cleanMessage())
+                _uiState.value = _uiState.value.copy(hasAuthSession = false, authLoading = false, error = e.cleanMessage())
             }
         }
     }
@@ -124,6 +140,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
             }.onSuccess { profile ->
                 _uiState.value = _uiState.value.copy(
                     profile = profile,
+                    hasAuthSession = true,
                     googlePending = false,
                     authLoading = false,
                     message = "Tu cuenta esta lista",
@@ -152,7 +169,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
                 )
                 authRepository.getProfile()
             }.onSuccess { profile ->
-                _uiState.value = _uiState.value.copy(profile = profile, authLoading = false, message = "Cuenta creada")
+                _uiState.value = _uiState.value.copy(profile = profile, hasAuthSession = profile != null, authLoading = false, message = "Cuenta creada")
                 refreshQuotes()
             }.onFailure { e ->
                 _uiState.value = _uiState.value.copy(authLoading = false, error = e.cleanMessage())
@@ -171,7 +188,7 @@ class WiiHopeViewModel(application: Application) : AndroidViewModel(application)
 
     fun logout() {
         authRepository.logout()
-        _uiState.value = _uiState.value.copy(profile = null, googlePending = false, publicQuotes = emptyList(), privateQuotes = emptyList())
+        _uiState.value = _uiState.value.copy(profile = null, hasAuthSession = false, googlePending = false, publicQuotes = emptyList(), privateQuotes = emptyList())
     }
 
     fun updatePhoto(url: String) {
