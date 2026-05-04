@@ -2,13 +2,13 @@ package com.wiihope.app.feature.shell
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.ContactSupport
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Feedback
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Mail
 import androidx.compose.material.icons.rounded.PrivacyTip
@@ -24,31 +24,33 @@ data class WiRoute(
 )
 
 object WiRoutes {
-    val common = listOf(
-        WiRoute(WiPage.Descubre, "Descubre", "Explora toda la experiencia WiiHope", Icons.Rounded.Explore),
-        WiRoute(WiPage.Blog, "Super Blog", "Reflexiones y testimonios", Icons.Rounded.Article),
-        WiRoute(WiPage.Acerca, "Acerca", "Historia, mision y version", Icons.Rounded.Info),
-    )
-
     fun roleRoutes(role: String): List<WiRoute> = when (role.lowercase()) {
         "admin" -> listOf(
-            WiRoute(WiPage.Admin, "Plataforma", "Panel general", Icons.Rounded.Dashboard),
+            WiRoute(WiPage.Musica, "Musica", "Alabanza y player premium", Icons.Rounded.Headphones),
+            WiRoute(WiPage.Notas, "Notas", "Tarjetas privadas locales", Icons.Rounded.StickyNote2),
+            WiRoute(WiPage.Planificar, "Planificar", "Documentos locales", Icons.Rounded.RocketLaunch),
+            WiRoute(WiPage.Dashboard, "Dashboard", "Tu espacio WiiHope", Icons.Rounded.Dashboard),
+            WiRoute(WiPage.Admin, "Admin", "Panel general", Icons.Rounded.Dashboard),
             WiRoute(WiPage.Usuarios, "Usuarios", "Gestion de comunidad", Icons.Rounded.Dashboard),
-            WiRoute(WiPage.Mensajes, "Mensajes", "Centro de conversaciones", Icons.Rounded.Mail),
         )
         "gestor", "empresa" -> listOf(
-            WiRoute(WiPage.Gestor, "Dashboard", "Resumen de actividad", Icons.Rounded.Dashboard),
-            WiRoute(WiPage.Mensajes, "Mensajes", "Centro de conversaciones", Icons.Rounded.Mail),
+            WiRoute(WiPage.Musica, "Musica", "Alabanza y player premium", Icons.Rounded.Headphones),
+            WiRoute(WiPage.Notas, "Notas", "Tarjetas privadas locales", Icons.Rounded.StickyNote2),
+            WiRoute(WiPage.Planificar, "Planificar", "Documentos locales", Icons.Rounded.RocketLaunch),
+            WiRoute(WiPage.Dashboard, "Dashboard", "Tu espacio WiiHope", Icons.Rounded.Dashboard),
+            WiRoute(WiPage.Gestor, "Gestor", "Resumen de actividad", Icons.Rounded.Dashboard),
         )
         else -> listOf(
-            WiRoute(WiPage.Descubre, "Dashboard", "Tu espacio WiiHope", Icons.Rounded.Dashboard),
-            WiRoute(WiPage.Planificar, "Planificar", "Ideas y devocionales", Icons.Rounded.RocketLaunch),
-            WiRoute(WiPage.Notas, "Notas", "Apuntes privados", Icons.Rounded.StickyNote2),
-            WiRoute(WiPage.Mensajes, "Mensajes", "Centro de conversaciones", Icons.Rounded.Mail),
+            WiRoute(WiPage.Musica, "Musica", "Alabanza y player premium", Icons.Rounded.Headphones),
+            WiRoute(WiPage.Notas, "Notas", "Tarjetas privadas locales", Icons.Rounded.StickyNote2),
+            WiRoute(WiPage.Planificar, "Planificar", "Documentos locales", Icons.Rounded.RocketLaunch),
+            WiRoute(WiPage.Dashboard, "Dashboard", "Tu espacio WiiHope", Icons.Rounded.Dashboard),
         )
     }
 
-    val legal = listOf(
+    val about = listOf(
+        WiRoute(WiPage.Acerca, "Acerca", "Historia, mision y version", Icons.Rounded.Info),
+        WiRoute(WiPage.Descubre, "Descubre", "Explora toda la experiencia", Icons.Rounded.Explore),
         WiRoute(WiPage.Terminos, "Terminos", "Condiciones de uso", Icons.Rounded.Description),
         WiRoute(WiPage.Privacidad, "Privacidad", "Como cuidamos tus datos", Icons.Rounded.PrivacyTip),
         WiRoute(WiPage.Feedback, "Feedback", "Ideas y mejoras", Icons.Rounded.Feedback),

@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.Book
 import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.VolunteerActivism
 import androidx.compose.material3.Icon
@@ -44,7 +44,7 @@ internal fun NavMain(selectedPage: WiPage, onSelected: (WiPage) -> Unit) {
             Icons.Rounded.VolunteerActivism,
             Icons.Rounded.Book,
             Icons.Rounded.Favorite,
-            Icons.Rounded.Headphones,
+            Icons.Rounded.Article,
             Icons.Rounded.Settings,
         )
         WiPage.mainPages.forEachIndexed { index, page ->

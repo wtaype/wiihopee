@@ -28,6 +28,7 @@ import com.wiihope.app.feature.web.Acerca
 import com.wiihope.app.feature.web.Blog
 import com.wiihope.app.feature.web.ChatWil
 import com.wiihope.app.feature.web.Contacto
+import com.wiihope.app.feature.web.Dashboard
 import com.wiihope.app.feature.web.Descubre
 import com.wiihope.app.feature.web.Feedback
 import com.wiihope.app.feature.web.OraPorMi
@@ -38,7 +39,17 @@ import com.wiihope.app.ui.components.WiHero
 import com.wiihope.app.ui.components.WiInfoCard
 
 @Composable
-internal fun WiMain(page: WiPage, state: WiiHopeUiState, playback: PlaybackState, viewModel: WiiHopeViewModel) {
+internal fun WiMain(
+    page: WiPage,
+    state: WiiHopeUiState,
+    playback: PlaybackState,
+    viewModel: WiiHopeViewModel,
+    blogBackSignal: Int = 0,
+    onBlogPostOpenChange: (Boolean) -> Unit = {},
+    ajustesBackSignal: Int = 0,
+    onAjustesSubPageOpenChange: (Boolean) -> Unit = {},
+    onNavigate: (WiPage) -> Unit = {},
+) {
     Showi(target = page, modifier = Modifier.fillMaxSize()) { current ->
         when (current) {
             WiPage.Oracion -> Oracion(state.profile?.nombre.orEmpty(), playback, viewModel::play, viewModel::togglePlayback)
@@ -74,14 +85,20 @@ internal fun WiMain(page: WiPage, state: WiiHopeUiState, playback: PlaybackState
                 onLoop = viewModel::toggleLoopOne,
                 onToggleLike = viewModel::toggleMusicLike,
             )
-            WiPage.Ajustes -> Ajustes(state, viewModel)
-            WiPage.Descubre -> Descubre()
-            WiPage.Blog -> Blog()
+            WiPage.Ajustes -> Ajustes(
+                state = state,
+                viewModel = viewModel,
+                backSignal = ajustesBackSignal,
+                onSubPageOpenChange = onAjustesSubPageOpenChange,
+            )
+            WiPage.Dashboard -> Dashboard(state.profile, state.publicQuotes, onNavigate)
+            WiPage.Descubre -> Descubre(onNavigate)
+            WiPage.Blog -> Blog(backSignal = blogBackSignal, onPostOpenChange = onBlogPostOpenChange)
             WiPage.OraPorMi -> OraPorMi()
             WiPage.ChatWil -> ChatWil()
-            WiPage.Acerca -> Acerca()
-            WiPage.Terminos -> Terminos()
-            WiPage.Privacidad -> Privacidad()
+            WiPage.Acerca -> Acerca(onNavigate)
+            WiPage.Terminos -> Terminos(onNavigate)
+            WiPage.Privacidad -> Privacidad(onNavigate)
             WiPage.Feedback -> Feedback()
             WiPage.Contacto -> Contacto()
             WiPage.Mensajes -> Mensajes()

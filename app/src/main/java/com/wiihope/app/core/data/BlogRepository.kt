@@ -1,6 +1,7 @@
 package com.wiihope.app.core.data
 
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
@@ -49,6 +50,12 @@ class BlogRepository(private val firestore: FirebaseFirestore = FirebaseFirestor
                 .let { cached -> if (cached.exists()) cached else docRef.get(Source.DEFAULT).await() }
         }
         return snap.takeIf { it.exists() }?.let(BlogPost::fromFirestore)?.takeIf { it.activo }
+    }
+
+    suspend fun addLike(slug: String) {
+        firestore.collection("blog").document(slug)
+            .update("likes", FieldValue.increment(1))
+            .await()
     }
 
     private suspend fun Query.fastGet(forceServer: Boolean) = if (forceServer) {

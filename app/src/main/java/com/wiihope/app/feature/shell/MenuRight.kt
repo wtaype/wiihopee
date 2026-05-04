@@ -98,23 +98,18 @@ private fun MenuContent(role: String, onClose: () -> Unit, onNavigate: (WiPage) 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(painterResource(R.drawable.logo), contentDescription = "Logo", modifier = Modifier.size(48.dp).clip(CircleShape), contentScale = ContentScale.Crop)
                 Column(Modifier.padding(start = 12.dp).weight(1f)) {
-                    Text("Menu", style = WiText.h2)
-                    Text("Paginas extra y modulos nuevos", style = WiText.small)
+                    Text("Descubre Ideas", style = WiText.h2)
+                    Text("Wilder", style = WiText.small)
                 }
                 IconButton(onClick = onClose) {
                     Icon(Icons.Rounded.Close, contentDescription = "Cerrar", tint = WiCss.primary, modifier = Modifier.size(22.dp))
                 }
             }
         }
-        item {
-            GoldPill(role.ifBlank { "smile" })
-            MenuSection("Nuevas paginas")
-        }
-        items(WiRoutes.common.distinctBy { it.page }) { item -> MenuRoute(item, onNavigate) }
         item { MenuSection("Tu cuenta") }
         items(WiRoutes.roleRoutes(role).distinctBy { it.page }) { item -> MenuRoute(item, onNavigate) }
-        item { MenuSection("Legal y contacto") }
-        items(WiRoutes.legal) { item -> MenuRoute(item, onNavigate) }
+        item { MenuSection("Acerca") }
+        items(WiRoutes.about) { item -> MenuRoute(item, onNavigate) }
         item {
             WiButton("Cerrar sesion", onLogout, Modifier.fillMaxWidth().padding(top = 4.dp), Icons.AutoMirrored.Rounded.Logout, color = WiCss.error, outlined = true)
             Spacer(Modifier.height(18.dp))

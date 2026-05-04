@@ -4,10 +4,11 @@ enum class WiPage(val label: String, val navIndex: Int? = null) {
     Oracion("Oracion", 0),
     Biblia("Biblia", 1),
     Citas("Citas", 2),
-    Musica("Musica", 3),
+    Blog("Blog", 3),
     Ajustes("Ajustes", 4),
+    Dashboard("Dashboard"),
+    Musica("Musica"),
     Descubre("Descubre"),
-    Blog("Blog"),
     OraPorMi("Ora por mi"),
     ChatWil("ChatWil"),
     Acerca("Acerca"),
@@ -27,7 +28,7 @@ enum class WiPage(val label: String, val navIndex: Int? = null) {
     val isMain: Boolean get() = navIndex != null
 
     companion object {
-        val mainPages = listOf(Oracion, Biblia, Citas, Musica, Ajustes)
+        val mainPages = listOf(Oracion, Biblia, Citas, Blog, Ajustes)
 
         fun fromLaunchScreen(value: String?): WiPage? = when (value) {
             "prayer" -> Oracion

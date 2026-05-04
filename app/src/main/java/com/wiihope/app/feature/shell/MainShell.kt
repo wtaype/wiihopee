@@ -1,5 +1,6 @@
 package com.wiihope.app.feature.shell
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,8 +38,20 @@ internal fun MainShell(
     var currentPage by remember { mutableStateOf(WiPage.Oracion) }
     var lastMainPage by remember { mutableStateOf(WiPage.Oracion) }
     var menuOpen by remember { mutableStateOf(false) }
+    var blogPostOpen by remember { mutableStateOf(false) }
+    var blogBackSignal by remember { mutableStateOf(0) }
+    var ajustesSubPageOpen by remember { mutableStateOf(false) }
+    var ajustesBackSignal by remember { mutableStateOf(0) }
+    var pageBackStack by remember { mutableStateOf<List<WiPage>>(emptyList()) }
 
-    fun openPage(page: WiPage) {
+    fun openPage(page: WiPage, addToHistory: Boolean = true) {
+        if (page == currentPage) return
+        if (addToHistory && !page.isMain) {
+            pageBackStack = (pageBackStack + currentPage).takeLast(8)
+        }
+        if (page.isMain) {
+            pageBackStack = emptyList()
+        }
         currentPage = page
         if (page.isMain) {
             lastMainPage = page
@@ -48,8 +61,30 @@ internal fun MainShell(
         }
     }
 
+    fun goBack() {
+        when {
+            currentPage == WiPage.Blog && blogPostOpen -> blogBackSignal++
+            currentPage == WiPage.Ajustes && ajustesSubPageOpen -> ajustesBackSignal++
+            pageBackStack.isNotEmpty() -> {
+                val previous = pageBackStack.last()
+                pageBackStack = pageBackStack.dropLast(1)
+                openPage(previous, addToHistory = false)
+            }
+            !currentPage.isMain -> openPage(lastMainPage, addToHistory = false)
+        }
+    }
+
+    val canGoBack = (currentPage == WiPage.Blog && blogPostOpen) ||
+        (currentPage == WiPage.Ajustes && ajustesSubPageOpen) ||
+        !currentPage.isMain
+
     LaunchedEffect(launchScreen) {
-        WiPage.fromLaunchScreen(launchScreen)?.let { openPage(it) }
+        WiPage.fromLaunchScreen(launchScreen)?.let { openPage(it, addToHistory = false) }
+    }
+
+    LaunchedEffect(currentPage) {
+        if (currentPage != WiPage.Blog) blogPostOpen = false
+        if (currentPage != WiPage.Ajustes) ajustesSubPageOpen = false
     }
 
     LaunchedEffect(pagerState.currentPage) {
@@ -57,8 +92,11 @@ internal fun MainShell(
             val page = WiPage.mainPages[pagerState.currentPage]
             currentPage = page
             lastMainPage = page
+            pageBackStack = emptyList()
         }
     }
+
+    BackHandler(enabled = canGoBack) { goBack() }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -68,6 +106,8 @@ internal fun MainShell(
                 onMessages = { openPage(WiPage.Mensajes) },
                 onNotifications = { openPage(WiPage.Notificaciones) },
                 onMenu = { menuOpen = true },
+                showBack = canGoBack,
+                onBack = ::goBack,
             )
         },
         floatingActionButton = {
@@ -94,17 +134,41 @@ internal fun MainShell(
                         onSeek = viewModel::seekTo,
                     )
                 }
-                NavMain(lastMainPage) { page -> openPage(page) }
+                NavMain(lastMainPage) { page -> openPage(page, addToHistory = false) }
             }
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding).premiumBackground()) {
             if (currentPage.isMain) {
-                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { index ->
-                    WiMain(WiPage.mainPages[index], state, playback, viewModel)
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    userScrollEnabled = !(currentPage == WiPage.Blog && blogPostOpen),
+                ) { index ->
+                    WiMain(
+                        WiPage.mainPages[index],
+                        state,
+                        playback,
+                        viewModel,
+                        blogBackSignal = blogBackSignal,
+                        onBlogPostOpenChange = { blogPostOpen = it },
+                        ajustesBackSignal = ajustesBackSignal,
+                        onAjustesSubPageOpenChange = { ajustesSubPageOpen = it },
+                        onNavigate = { page -> openPage(page) },
+                    )
                 }
             } else {
-                WiMain(currentPage, state, playback, viewModel)
+                WiMain(
+                    currentPage,
+                    state,
+                    playback,
+                    viewModel,
+                    blogBackSignal = blogBackSignal,
+                    onBlogPostOpenChange = { blogPostOpen = it },
+                    ajustesBackSignal = ajustesBackSignal,
+                    onAjustesSubPageOpenChange = { ajustesSubPageOpen = it },
+                    onNavigate = { page -> openPage(page) },
+                )
             }
         }
     }

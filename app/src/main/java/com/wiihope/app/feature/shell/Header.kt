@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Mail
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Notifications
@@ -29,7 +30,14 @@ import com.wiihope.app.ui.theme.WiCss
 import com.wiihope.app.ui.theme.WiText
 
 @Composable
-internal fun Header(onHome: () -> Unit, onMessages: () -> Unit, onNotifications: () -> Unit, onMenu: () -> Unit) {
+internal fun Header(
+    onHome: () -> Unit,
+    onMessages: () -> Unit,
+    onNotifications: () -> Unit,
+    onMenu: () -> Unit,
+    showBack: Boolean = false,
+    onBack: () -> Unit = {},
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,6 +59,9 @@ internal fun Header(onHome: () -> Unit, onMessages: () -> Unit, onNotifications:
                     onClick = onHome,
                 ),
         )
+        if (showBack) {
+            HeaderIcon(Icons.AutoMirrored.Rounded.ArrowBack, "Volver", onBack)
+        }
         HeaderIcon(Icons.Rounded.Mail, "Mensajes", onMessages)
         HeaderIcon(Icons.Rounded.Notifications, "Notificaciones", onNotifications)
         HeaderIcon(Icons.Rounded.Menu, "Menu", onMenu)

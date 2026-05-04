@@ -1,5 +1,6 @@
 package com.wiihope.app.feature.web
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,14 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Article
-import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.MenuBook
+import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,10 +75,11 @@ import java.util.Locale
 
 private const val FIRST_PAGE = 7L
 private const val NEXT_PAGE = 3L
+private val LikePink = Color(0xFFFE0149)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun Blog() {
+internal fun Blog(backSignal: Int = 0, onPostOpenChange: (Boolean) -> Unit = {}) {
     val repository = remember { BlogRepository() }
     val scope = rememberCoroutineScope()
     var posts by remember { mutableStateOf(emptyList<BlogPost>()) }
@@ -121,6 +124,14 @@ internal fun Blog() {
     }
 
     LaunchedEffect(Unit) { loadFirst() }
+
+    LaunchedEffect(backSignal) {
+        if (backSignal > 0 && selected != null) selected = null
+    }
+
+    LaunchedEffect(selected) {
+        onPostOpenChange(selected != null)
+    }
 
     selected?.let { post ->
         BlogPostDetail(
@@ -216,9 +227,9 @@ private fun BlogHeader(total: Int) {
                     Icon(Icons.Rounded.Article, null, tint = WiCss.black, modifier = Modifier.size(24.dp))
                 }
                 Column(Modifier.weight(1f).padding(start = 14.dp)) {
-                    GoldPill("Super Blog")
+                    GoldPill("Blog")
                     Text("Reflexiones para caminar con Dios", style = WiText.h2, modifier = Modifier.padding(top = 8.dp))
-                    Text("$total articulos cargados en cache", style = WiText.small, modifier = Modifier.padding(top = 3.dp))
+                    Text("$total articulos disponibles", style = WiText.small, modifier = Modifier.padding(top = 3.dp))
                 }
             }
         }
@@ -234,7 +245,6 @@ private fun BlogCard(post: BlogPost, onClick: () -> Unit) {
                 contentDescription = post.imagenAlt.ifBlank { post.titulo },
                 modifier = Modifier.fillMaxWidth().height(176.dp).clip(RoundedCornerShape(22.dp)),
                 contentScale = ContentScale.Crop,
-                placeholder = androidx.compose.ui.res.painterResource(R.drawable.jesus),
                 error = androidx.compose.ui.res.painterResource(R.drawable.jesus),
                 fallback = androidx.compose.ui.res.painterResource(R.drawable.jesus),
             )
@@ -258,13 +268,32 @@ private fun BlogCard(post: BlogPost, onClick: () -> Unit) {
 @Composable
 private fun BlogPostDetail(preview: BlogPost, repository: BlogRepository, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
     var post by remember(preview.routeId) { mutableStateOf(preview) }
     var loading by remember(preview.routeId) { mutableStateOf(preview.contenidoMd.isBlank() && preview.contenido.isBlank()) }
+    var liked by remember(preview.routeId) { mutableStateOf(false) }
+    var likeCount by remember(preview.routeId) { mutableStateOf(preview.likes) }
+
+    fun likePost() {
+        if (liked) return
+        liked = true
+        likeCount += 1
+        scope.launch {
+            runCatching { repository.addLike(post.routeId) }
+        }
+    }
+
+    BackHandler(onBack = onBack)
 
     LaunchedEffect(preview.routeId) {
         loading = true
         runCatching { repository.loadPost(preview.routeId) }
-            .onSuccess { if (it != null) post = it }
+            .onSuccess {
+                if (it != null) {
+                    post = it
+                    likeCount = it.likes
+                }
+            }
         loading = false
     }
 
@@ -274,32 +303,26 @@ private fun BlogPostDetail(preview: BlogPost, repository: BlogRepository, onBack
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Box {
-                AsyncImage(
-                    model = post.cover.ifBlank { post.previewCover },
-                    contentDescription = post.imagenAlt.ifBlank { post.titulo },
-                    modifier = Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(28.dp)),
-                    contentScale = ContentScale.Crop,
-                    placeholder = androidx.compose.ui.res.painterResource(R.drawable.jesus),
-                    error = androidx.compose.ui.res.painterResource(R.drawable.jesus),
-                    fallback = androidx.compose.ui.res.painterResource(R.drawable.jesus),
-                )
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier.padding(12.dp).size(44.dp).clip(CircleShape).background(WiCss.white.copy(alpha = 0.78f)),
-                ) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Volver", tint = WiCss.primary)
-                }
-            }
+            AsyncImage(
+                model = post.cover.ifBlank { post.previewCover },
+                contentDescription = post.imagenAlt.ifBlank { post.titulo },
+                modifier = Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(28.dp)),
+                contentScale = ContentScale.Crop,
+                error = androidx.compose.ui.res.painterResource(R.drawable.jesus),
+                fallback = androidx.compose.ui.res.painterResource(R.drawable.jesus),
+            )
         }
         item {
             Column {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    StatusPill(post.categoria.ifBlank { "Fe" }, WiCss.secondary)
-                    if (post.tiempoLectura.isNotBlank()) StatusPill(post.tiempoLectura, WiCss.gray, Icons.Rounded.MenuBook)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(postMeta(post), style = WiText.tiny, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text("·", style = WiText.tiny)
+                    StatusPill("${post.vistas}", WiCss.gray, Icons.Rounded.Visibility)
+                    Box(Modifier.clickable(onClick = ::likePost)) {
+                        StatusPill("$likeCount", LikePink, Icons.Rounded.Favorite)
+                    }
                 }
-                Text(post.titulo, style = WiText.display.copy(fontSize = 32.sp, lineHeight = 38.sp), modifier = Modifier.padding(top = 12.dp))
-                Text("${post.autor} · ${formatDate(post.creado)}", style = WiText.small, modifier = Modifier.padding(top = 8.dp))
+                Text(post.titulo, style = WiText.display.copy(fontSize = 30.sp, lineHeight = 36.sp), modifier = Modifier.padding(top = 12.dp))
             }
         }
         if (loading) {
@@ -309,14 +332,35 @@ private fun BlogPostDetail(preview: BlogPost, repository: BlogRepository, onBack
                 }
             }
         } else {
-            items(parsePostBlocks(post)) { block ->
-                BlogBlockView(block)
+            item {
+                GlassCard(Modifier.fillMaxWidth(), intensity = 0.44f) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        parsePostBlocks(post).forEach { block ->
+                            BlogBlockView(block)
+                        }
+                    }
+                }
             }
             item {
                 GlassCard(Modifier.fillMaxWidth(), intensity = 0.58f) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Favorite, null, tint = WiCss.primary, modifier = Modifier.size(20.dp))
-                        Text("${post.likes} me gusta · ${post.vistas} vistas", style = WiText.small, modifier = Modifier.padding(start = 9.dp))
+                    Column {
+                        Text("Esta reflexion te ayudo?", style = WiText.h3)
+                        Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            WiButton(
+                                text = "$likeCount",
+                                onClick = ::likePost,
+                                modifier = Modifier.weight(1f),
+                                icon = Icons.Rounded.Favorite,
+                                color = if (liked) LikePink else WiCss.primary,
+                            )
+                            WiButton(
+                                text = "Version Web",
+                                onClick = { uriHandler.openUri("https://wiihope.com/${post.routeId}") },
+                                modifier = Modifier.weight(1f),
+                                icon = Icons.Rounded.OpenInNew,
+                                outlined = true,
+                            )
+                        }
                     }
                 }
             }
@@ -335,7 +379,6 @@ private fun BlogBlockView(block: PostBlock) {
             contentDescription = block.alt,
             modifier = Modifier.fillMaxWidth().height(230.dp).clip(RoundedCornerShape(24.dp)),
             contentScale = ContentScale.Crop,
-            placeholder = androidx.compose.ui.res.painterResource(R.drawable.jesus),
             error = androidx.compose.ui.res.painterResource(R.drawable.jesus),
         )
         PostBlock.Divider -> HorizontalDivider(color = WiCss.goldSoft.copy(alpha = 0.48f), thickness = 1.dp, modifier = Modifier.padding(vertical = 4.dp))
@@ -402,3 +445,18 @@ private fun formatDate(timestamp: Timestamp?): String {
     val date = timestamp?.toDate() ?: return "Reciente"
     return SimpleDateFormat("d MMM yyyy", Locale("es", "PE")).format(date)
 }
+
+private fun formatLongDate(timestamp: Timestamp?): String {
+    val date = timestamp?.toDate() ?: return "Reciente"
+    return SimpleDateFormat("d 'de' MMMM yyyy", Locale("es", "PE"))
+        .format(date)
+        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("es", "PE")) else it.toString() }
+}
+
+private fun postMeta(post: BlogPost): String =
+    listOf(
+        formatLongDate(post.creado),
+        post.autor,
+        post.categoria,
+        post.tiempoLectura,
+    ).filter { it.isNotBlank() }.joinToString(" · ")
