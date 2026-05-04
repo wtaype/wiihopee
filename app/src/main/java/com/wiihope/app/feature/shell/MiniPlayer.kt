@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,7 +77,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -91,7 +91,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -110,6 +112,7 @@ import com.wiihope.app.feature.player.WiiHopeViewModel
 import com.wiihope.app.ui.components.EmptyState
 import com.wiihope.app.ui.components.GlassCard
 import com.wiihope.app.ui.components.GoldPill
+import com.wiihope.app.ui.components.TrackArtwork
 import com.wiihope.app.ui.components.WiButton
 import com.wiihope.app.ui.components.WiField
 import com.wiihope.app.ui.components.WiGoldButton
@@ -122,6 +125,7 @@ import kotlin.math.roundToLong
 @Composable
 internal fun MiniPlayer(
     state: PlaybackState,
+    onOpen: (TrackSource) -> Unit,
     onToggle: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
@@ -129,40 +133,120 @@ internal fun MiniPlayer(
     onSeek: (Long) -> Unit,
 ) {
     val current = state.current ?: return
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 7.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = WiCss.white.copy(alpha = 0.64f)),
-        border = WiCss.glassBorder(0.70f),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(WiCss.bgBase.copy(alpha = 0.97f)),
     ) {
-        Column(Modifier.padding(12.dp)) {
+        Box(Modifier.fillMaxWidth().height(1.dp).background(WiCss.goldSoft.copy(alpha = 0.42f)))
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(current.artworkRes ?: R.drawable.logo), contentDescription = current.title, modifier = Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)), contentScale = ContentScale.Crop)
-                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text(current.title, style = WiText.h3, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(current.artist, style = WiText.tiny, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                IconButton(onClick = onPrevious) { Icon(Icons.Rounded.SkipPrevious, null, modifier = Modifier.size(24.dp)) }
-                IconButton(onClick = onToggle, modifier = Modifier.clip(CircleShape).background(WiCss.primary)) {
-                    Icon(if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = WiCss.white, modifier = Modifier.size(26.dp))
-                }
-                IconButton(onClick = onNext) { Icon(Icons.Rounded.SkipNext, null, modifier = Modifier.size(24.dp)) }
-                IconButton(
-                    onClick = onLoop,
-                    modifier = Modifier.clip(CircleShape).background(if (state.loopOne) WiCss.gold.copy(alpha = 0.40f) else Color.Transparent),
+                Row(
+                    modifier = Modifier.weight(1f).clickable { onOpen(current.source) },
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Rounded.RepeatOne, null, tint = if (state.loopOne) WiCss.black else WiCss.text300, modifier = Modifier.size(21.dp))
+                    TrackArtwork(
+                        current,
+                        contentDescription = current.title,
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop,
+                    )
+                    Column(Modifier.weight(1f).padding(start = 10.dp, end = 8.dp)) {
+                        Text(current.title, style = WiText.h3, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(current.artist, style = WiText.tiny, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                    CompactControl(onPrevious) { Icon(Icons.Rounded.SkipPrevious, null, tint = WiCss.text700, modifier = Modifier.size(22.dp)) }
+                    CompactControl(onToggle, modifier = Modifier.size(38.dp).clip(CircleShape).background(WiCss.primary)) {
+                        Icon(if (state.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null, tint = WiCss.white, modifier = Modifier.size(24.dp))
+                    }
+                    CompactControl(onNext) { Icon(Icons.Rounded.SkipNext, null, tint = WiCss.text700, modifier = Modifier.size(22.dp)) }
+                    CompactControl(onLoop, modifier = Modifier.size(34.dp).clip(CircleShape).background(if (state.loopOne) WiCss.gold.copy(alpha = 0.44f) else Color.Transparent)) {
+                        Icon(Icons.Rounded.RepeatOne, null, tint = if (state.loopOne) WiCss.black else WiCss.text300, modifier = Modifier.size(19.dp))
+                    }
                 }
             }
             if (state.durationMs > 0) {
-                Slider(
-                    value = state.positionMs.toFloat().coerceIn(0f, state.durationMs.toFloat()),
-                    valueRange = 0f..state.durationMs.toFloat(),
-                    onValueChange = { onSeek(it.roundToLong()) },
-                    modifier = Modifier.height(28.dp),
+                MiniSeekBar(
+                    positionMs = state.positionMs,
+                    durationMs = state.durationMs,
+                    onSeek = onSeek,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(formatTime(state.positionMs), style = WiText.tiny)
+                    Text(formatTime(state.durationMs), style = WiText.tiny)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun MiniSeekBar(
+    positionMs: Long,
+    durationMs: Long,
+    onSeek: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var widthPx by remember { mutableIntStateOf(0) }
+    val progress = (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+
+    fun seekTo(x: Float) {
+        if (widthPx <= 0) return
+        val fraction = (x / widthPx).coerceIn(0f, 1f)
+        onSeek((durationMs * fraction).roundToLong())
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(10.dp)
+            .onSizeChanged { widthPx = it.width }
+            .pointerInput(durationMs) {
+                detectDragGestures(
+                    onDragStart = { seekTo(it.x) },
+                    onDrag = { change, _ ->
+                        seekTo(change.position.x)
+                        change.consume()
+                    },
+                )
+            },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .clip(CircleShape)
+                .background(WiCss.goldSoft.copy(alpha = 0.28f)),
+        )
+        Box(
+            Modifier
+                .fillMaxWidth(progress)
+                .height(3.dp)
+                .clip(CircleShape)
+                .background(WiCss.secondary),
+        )
+    }
+}
+
+@Composable
+private fun CompactControl(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.size(34.dp).clip(CircleShape),
+    content: @Composable () -> Unit,
+) {
+    Box(modifier = modifier.clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        content()
+    }
+}
+
+private fun formatTime(ms: Long): String {
+    val totalSeconds = (ms / 1000).coerceAtLeast(0L)
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "$minutes:${seconds.toString().padStart(2, '0')}"
 }
 

@@ -26,7 +26,28 @@ class MusicRepository(private val firestore: FirebaseFirestore = FirebaseFiresto
                 url = url,
                 source = TrackSource.Music,
                 artworkRes = R.drawable.album,
+                artworkUrl = doc.firstImageUrl(),
             )
         }
+    }
+
+    private fun com.google.firebase.firestore.DocumentSnapshot.firstImageUrl(): String? {
+        val fields = listOf(
+            "portada",
+            "portadaUrl",
+            "artworkUrl",
+            "artwork",
+            "thumbnailUrl",
+            "thumbnail",
+            "coverUrl",
+            "cover",
+            "imageUrl",
+            "image",
+            "imagenUrl",
+            "imagen",
+            "fotoUrl",
+            "foto",
+        )
+        return fields.firstNotNullOfOrNull { field -> getString(field)?.trim()?.takeIf { it.isNotBlank() } }
     }
 }

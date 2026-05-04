@@ -191,7 +191,8 @@ private fun QuoteCard(quote: Quote, currentUser: UserProfile?, viewModel: WiiHop
         Text(
             "\"${quote.cita}\"",
             style = WiText.body.copy(fontSize = 17.sp, lineHeight = 25.sp, color = WiCss.text700),
-            modifier = Modifier.padding(vertical = 15.dp),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
         )
     }
 }

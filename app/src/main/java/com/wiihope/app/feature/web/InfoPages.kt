@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.ContactSupport
 import androidx.compose.material.icons.rounded.Feedback
@@ -18,17 +17,6 @@ import com.wiihope.app.core.app.Wii
 import com.wiihope.app.ui.components.WiHero
 import com.wiihope.app.ui.components.WiInfoCard
 import com.wiihope.app.ui.components.WiLegalBlock
-
-@Composable
-internal fun Blog() = SimpleInfoPage(
-    title = "Super Blog",
-    subtitle = "Reflexiones y testimonios para alimentar la fe.",
-    icon = Icons.Rounded.Article,
-    cards = listOf(
-        "Proxima conexion" to "Aqui conectaremos posts desde Firestore o Markdown para lectura nativa.",
-        "Categorias" to "Devocionales, familia, estudio biblico, testimonios y vida diaria.",
-    ),
-)
 
 @Composable
 internal fun OraPorMi() = SimpleInfoPage(

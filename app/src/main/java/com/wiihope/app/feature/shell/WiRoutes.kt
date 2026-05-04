@@ -27,7 +27,6 @@ object WiRoutes {
     val common = listOf(
         WiRoute(WiPage.Descubre, "Descubre", "Explora toda la experiencia WiiHope", Icons.Rounded.Explore),
         WiRoute(WiPage.Blog, "Super Blog", "Reflexiones y testimonios", Icons.Rounded.Article),
-        WiRoute(WiPage.OraPorMi, "Ora por mi", "Peticiones de oracion", Icons.Rounded.ChatBubble),
         WiRoute(WiPage.Acerca, "Acerca", "Historia, mision y version", Icons.Rounded.Info),
     )
 
@@ -44,7 +43,6 @@ object WiRoutes {
         else -> listOf(
             WiRoute(WiPage.Descubre, "Dashboard", "Tu espacio WiiHope", Icons.Rounded.Dashboard),
             WiRoute(WiPage.Planificar, "Planificar", "Ideas y devocionales", Icons.Rounded.RocketLaunch),
-            WiRoute(WiPage.NuevoPost, "Nuevo Post", "Publicar reflexion", Icons.Rounded.Add),
             WiRoute(WiPage.Notas, "Notas", "Apuntes privados", Icons.Rounded.StickyNote2),
             WiRoute(WiPage.Mensajes, "Mensajes", "Centro de conversaciones", Icons.Rounded.Mail),
         )

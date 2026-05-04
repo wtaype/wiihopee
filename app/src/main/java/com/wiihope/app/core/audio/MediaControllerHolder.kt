@@ -11,7 +11,9 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import com.wiihope.app.R
 import com.wiihope.app.core.model.AudioTrack
+import com.wiihope.app.core.model.TrackSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -109,8 +111,9 @@ class MediaControllerHolder(private val context: Context) {
     }
 
     private fun publish(player: Player) {
-        val mediaId = player.currentMediaItem?.mediaId
-        val current = queue.firstOrNull { it.id == mediaId }
+        val mediaItem = player.currentMediaItem
+        val mediaId = mediaItem?.mediaId
+        val current = queue.firstOrNull { it.id == mediaId } ?: mediaItem?.toAudioTrack()
         _state.value = PlaybackState(
             current = current,
             isPlaying = player.isPlaying,
@@ -133,5 +136,24 @@ class MediaControllerHolder(private val context: Context) {
             .setUri(url)
             .setMediaMetadata(metadata)
             .build()
+    }
+
+    private fun MediaItem.toAudioTrack(): AudioTrack {
+        val source = mediaMetadata.extras?.getString("source")
+            ?.let { runCatching { TrackSource.valueOf(it) }.getOrNull() }
+            ?: TrackSource.Music
+        return AudioTrack(
+            id = mediaId,
+            title = mediaMetadata.title?.toString().orEmpty().ifBlank { "WiiHope" },
+            artist = mediaMetadata.artist?.toString().orEmpty().ifBlank { "WiiHope" },
+            subtitle = mediaMetadata.description?.toString().orEmpty(),
+            url = localConfiguration?.uri?.toString().orEmpty(),
+            source = source,
+            artworkRes = when (source) {
+                TrackSource.Prayer, TrackSource.Bible -> R.drawable.jesus
+                TrackSource.Music -> R.drawable.album
+            },
+            artworkUrl = mediaMetadata.artworkUri?.toString(),
+        )
     }
 }

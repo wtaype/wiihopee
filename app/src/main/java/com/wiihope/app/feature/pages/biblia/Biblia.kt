@@ -80,10 +80,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -128,8 +130,16 @@ internal fun Biblia(
     onToggle: () -> Unit,
     onToggleLike: (BibleBook, Int, AudioTrack) -> Unit,
 ) {
-    var selected by remember { mutableIntStateOf(0) }
+    var selected by rememberSaveable { mutableIntStateOf(0) }
     var search by remember { mutableStateOf("") }
+    val currentBibleTrackId = playback.current?.takeIf { it.source == TrackSource.Bible }?.id
+    LaunchedEffect(currentBibleTrackId, books) {
+        if (currentBibleTrackId != null) {
+            books.indexOfFirst { currentBibleTrackId.startsWith("bible-${it.slug}-") }
+                .takeIf { it >= 0 }
+                ?.let { selected = it }
+        }
+    }
     val book = books.getOrNull(selected)
     val queue = book?.let { List(it.chapters) { chapter -> it.chapterTrack(chapter) } }.orEmpty()
     val filteredBooks = remember(search, books) {

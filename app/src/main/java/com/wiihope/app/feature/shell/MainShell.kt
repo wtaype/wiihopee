@@ -80,6 +80,13 @@ internal fun MainShell(
                 if (currentPage != WiPage.Oracion) {
                     MiniPlayer(
                         state = playback,
+                        onOpen = { source ->
+                            when (source) {
+                                com.wiihope.app.core.model.TrackSource.Prayer -> openPage(WiPage.Oracion)
+                                com.wiihope.app.core.model.TrackSource.Bible -> openPage(WiPage.Biblia)
+                                com.wiihope.app.core.model.TrackSource.Music -> openPage(WiPage.Musica)
+                            }
+                        },
                         onToggle = viewModel::togglePlayback,
                         onPrevious = viewModel::previous,
                         onNext = viewModel::next,

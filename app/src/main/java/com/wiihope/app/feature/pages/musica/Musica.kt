@@ -113,6 +113,7 @@ import com.wiihope.app.feature.player.WiiHopeViewModel
 import com.wiihope.app.ui.components.EmptyState
 import com.wiihope.app.ui.components.GlassCard
 import com.wiihope.app.ui.components.GoldPill
+import com.wiihope.app.ui.components.TrackArtwork
 import com.wiihope.app.ui.components.WiButton
 import com.wiihope.app.ui.components.WiField
 import com.wiihope.app.ui.components.WiGoldButton
@@ -226,8 +227,8 @@ private fun MusicHero(
     GlassCard(Modifier.fillMaxWidth(), intensity = 0.78f) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Box {
-                Image(
-                    painterResource(track?.artworkRes ?: R.drawable.logo),
+                TrackArtwork(
+                    track,
                     contentDescription = track?.title ?: "Musica",
                     modifier = Modifier.fillMaxWidth().height(230.dp).clip(RoundedCornerShape(24.dp)),
                     contentScale = ContentScale.Crop,
@@ -282,8 +283,8 @@ private fun MusicHero(
 private fun MusicAlbumCard(track: AudioTrack, isPlaying: Boolean, onClick: () -> Unit) {
     Column(Modifier.width(150.dp).clickable(onClick = onClick)) {
         Box {
-            Image(
-                painterResource(track.artworkRes ?: R.drawable.logo),
+            TrackArtwork(
+                track,
                 contentDescription = track.title,
                 modifier = Modifier.size(150.dp).clip(RoundedCornerShape(18.dp)),
                 contentScale = ContentScale.Crop,
@@ -314,8 +315,8 @@ private fun MusicTrackRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box {
-            Image(
-                painterResource(track.artworkRes ?: R.drawable.logo),
+            TrackArtwork(
+                track,
                 contentDescription = track.title,
                 modifier = Modifier.size(54.dp).clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop,
@@ -345,8 +346,8 @@ private fun MusicTrackRow(
 private fun TrackCard(track: AudioTrack, onClick: () -> Unit) {
     GlassCard(Modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painterResource(track.artworkRes ?: R.drawable.logo),
+            TrackArtwork(
+                track,
                 contentDescription = track.title,
                 modifier = Modifier.size(54.dp).clip(RoundedCornerShape(16.dp)),
                 contentScale = ContentScale.Crop,
